@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Character, GameState, Lane, ObstacleType, PowerUpType, Entity } from '../types';
 import { GAME_CONFIG } from '../constants';
@@ -100,14 +101,14 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameStat
     switch (key) {
       case 'ArrowLeft':
       case 'a':
-        if (player.lane > Lane.LEFT) {
+        if (player.lane > Lane.FAR_LEFT) { // -2
           player.lane--;
           player.targetX = player.lane * GAME_CONFIG.LANE_WIDTH;
         }
         break;
       case 'ArrowRight':
       case 'd':
-        if (player.lane < Lane.RIGHT) {
+        if (player.lane < Lane.FAR_RIGHT) { // 2
           player.lane++;
           player.targetX = player.lane * GAME_CONFIG.LANE_WIDTH;
         }
@@ -151,6 +152,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameStat
                 else if (character.id === 'char_6') projType = 'NUMBER_BOLT';
                 else if (character.id === 'char_7') projType = 'ECTO_BLAST';
                 else if (character.id === 'char_8') projType = 'ROCKET';
+                else if (character.id === 'char_9') projType = 'SOCCER_BALL'; // Bragnaldo
+                else if (character.id === 'char_10') projType = 'WATER_BOTTLE'; // Cyclo
+                else if (['char_11', 'char_12', 'char_13', 'char_14', 'char_15', 'char_16'].includes(character.id)) projType = 'GENERIC';
                 
                 fireProjectile(projType);
             }
@@ -174,7 +178,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameStat
       const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
       const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
       
-      // Tap detection for shooting on mobile if we want
+      // Tap detection for shooting on mobile
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
           handleInput('Control');
       }
@@ -193,551 +197,611 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameStat
     return () => window.removeEventListener('keydown', keyHandler);
   }, [handleInput]);
 
-
+  // GAME LOOP
   const gameLoop = (time: number) => {
-    if (isPaused) {
-        lastTimeRef.current = time;
-        requestRef.current = requestAnimationFrame(gameLoop);
-        return;
-    }
+      if (isPaused) {
+          lastTimeRef.current = time;
+          requestRef.current = requestAnimationFrame(gameLoop);
+          return;
+      }
 
-    const dt = Math.min((time - lastTimeRef.current) / 16.67, 2);
-    lastTimeRef.current = time;
+      const deltaTime = time - lastTimeRef.current;
+      lastTimeRef.current = time;
 
-    updatePhysics(dt, time);
-    render(dt);
+      const player = playerRef.current;
+      const stats = statsRef.current;
 
-    if (gameState === GameState.PLAYING) {
-      requestRef.current = requestAnimationFrame(gameLoop);
-    }
-  };
+      // Update speed
+      if (stats.speed < GAME_CONFIG.MAX_SPEED) {
+          stats.speed += GAME_CONFIG.SPEED_INCREMENT;
+      }
 
-  const updatePhysics = (dt: number, time: number) => {
-    const stats = statsRef.current;
-    const player = playerRef.current;
+      // Update distance and score
+      stats.distance += stats.speed;
+      stats.score = Math.floor(stats.distance * (character.powerUp === PowerUpType.DOUBLE_SCORE ? 2 : 1));
+      setHudScore(stats.score);
 
-    // 1. Update Speed
-    let speedMult = 1;
-    if (character.powerUp === PowerUpType.SLOW_TIME) speedMult = 0.8;
-    
-    // Gradual increase
-    if (stats.speed < GAME_CONFIG.MAX_SPEED) {
-        stats.speed += GAME_CONFIG.SPEED_INCREMENT * speedMult * dt;
-    }
-    
-    // 2. Score
-    let scoreMult = 1;
-    if (character.powerUp === PowerUpType.DOUBLE_SCORE) scoreMult = 2;
-    stats.score += (stats.speed * 10 * scoreMult) * dt;
-    
-    stats.distance += stats.speed * dt;
-    player.z = stats.distance;
-
-    // 3. Player Movement
-    player.x += (player.targetX - player.x) * 0.2 * dt; 
-
-    // Vertical Physics
-    if (player.y > 0 || player.vy > 0) {
-        let gravity = GAME_CONFIG.GRAVITY;
-        if (character.powerUp === PowerUpType.FLOATY) gravity *= 0.6;
-
-        player.y += player.vy * dt;
-        player.vy -= gravity * dt;
-        
-        if (player.y <= 0) {
-            player.y = 0;
-            player.vy = 0;
-            player.state = 'RUNNING';
-        }
-    }
-
-
-    // 4. Spawn Entities
-    const spawnHorizon = player.z + GAME_CONFIG.DRAW_DISTANCE;
-    const lastEntityZ = entitiesRef.current.length > 0 
-        ? Math.max(...entitiesRef.current.map(e => e.z)) 
-        : player.z;
-    
-    if (lastEntityZ < spawnHorizon) {
-        spawnEntity(lastEntityZ);
-    }
-
-    // 5. Update Entities & Collision
-    for (let i = entitiesRef.current.length - 1; i >= 0; i--) {
-        const ent = entitiesRef.current[i];
-        
-        // PROJECTILE LOGIC
-        if (ent.type === 'PROJECTILE') {
-             ent.z += (stats.speed + 0.3) * dt;
-             
-             // Check if projectile hits an obstacle
-             for (const other of entitiesRef.current) {
-                 if (!other.active || other.type === 'COIN' || other.type === 'SPEED_BOOST' || other.type === 'PROJECTILE') continue;
-                 
-                 // Collision check
-                 if (Math.abs(ent.z - other.z) < 1.0 && Math.abs(ent.x - other.x) < 1.0) {
-                     ent.active = false;
-                     other.active = false;
-                     break;
-                 }
-             }
-
-             if (ent.z > player.z + 60) ent.active = false;
-             
-             if (!ent.active) {
-                 entitiesRef.current.splice(i, 1);
-                 continue;
-             }
-             continue; // Skip player collision logic for projectile
-        }
-
-        // Magnet
-        if (character.powerUp === PowerUpType.MAGNET && ent.type === 'COIN') {
-             if (ent.z < player.z + 15 && ent.z > player.z - 2) {
-                 const laneDiff = (player.lane * GAME_CONFIG.LANE_WIDTH) - ent.x;
-                 if (Math.abs(laneDiff) < 4) {
-                     ent.x += laneDiff * 0.1 * dt;
-                     ent.z += (player.z - ent.z) * 0.05 * dt;
-                 }
-             }
-        }
-
-        // Cleanup passed entities
-        if (ent.z < player.z - 10) {
-            entitiesRef.current.splice(i, 1);
-            continue;
-        }
-
-        if (ent.active && checkCollision(player, ent)) {
-            if (ent.type === 'COIN') {
-                const coinValue = character.powerUp === PowerUpType.DOUBLE_COINS ? 2 : 1;
-                stats.coins += coinValue;
-                ent.active = false;
-
-                // --- NEW MECHANIC: 10 COINS = AMMO RELOAD ---
-                if (stats.coins % 10 === 0) {
-                    player.ammo += 3; // Grant 3 shots
-                    setHudAmmo(player.ammo);
-                    setShowAmmoReload(true);
-                    setTimeout(() => setShowAmmoReload(false), 1000);
-                }
-
-            } else if (ent.type === 'SPEED_BOOST') {
-                stats.speed += GAME_CONFIG.SPEED_BOOST_AMOUNT;
-                stats.collectedPowerups += 1; 
-                ent.active = false;
-                setShowSpeedBoost(true);
-                setTimeout(() => setShowSpeedBoost(false), 1000);
-            } else {
-                if (player.invincible) {
-                    player.invincible = false;
-                    ent.active = false; 
-                } else if (character.powerUp === PowerUpType.PHASE_SHIFT && ent.type === ObstacleType.HIGH_BARRIER && Math.random() < 0.2) {
-                     // Phase through
-                } else {
-                    handleGameOver();
-                }
-            }
-        }
-    }
-
-    if (Math.floor(stats.score) % 10 === 0) {
-        setHudScore(Math.floor(stats.score));
-        setHudCoins(stats.coins);
-    }
-  };
-
-  const checkCollision = (p: typeof playerRef.current, e: Entity) => {
-      const collisionDepth = 0.8; 
-      if (Math.abs(p.z - e.z) > collisionDepth) return false;
-      if (Math.abs(p.x - e.x) > 0.8) return false;
-      const playerHeight = p.state === 'ROLLING' ? 0.8 : 1.8;
-      const playerBottom = p.y;
-      const playerTop = p.y + playerHeight;
-      const entBottom = e.y;
-      const entTop = e.y + e.height;
-      return (playerBottom < entTop && playerTop > entBottom);
-  };
-
-  const spawnEntity = (farZ: number) => {
-      const speedFactor = Math.max(1, statsRef.current.speed / 0.3);
-      const spawnZ = farZ + (Math.random() * 10 + 10 * speedFactor);
-      const lane = [Lane.LEFT, Lane.CENTER, Lane.RIGHT][Math.floor(Math.random() * 3)];
-      const x = lane * GAME_CONFIG.LANE_WIDTH;
-      const r = Math.random();
+      // Player Movement Logic (Lerp)
+      player.x += (player.targetX - player.x) * 0.2;
       
-      if (r < 0.08) { 
-          entitiesRef.current.push({
-              x, y: 0.5, z: spawnZ, width: 0.8, height: 0.8, type: 'SPEED_BOOST', active: true
-          });
-      } else if (r < 0.35) {
-          entitiesRef.current.push({
-              x, y: 0.5, z: spawnZ, width: 0.5, height: 0.5, type: 'COIN', active: true
-          });
-          entitiesRef.current.push({
-            x, y: 0.5, z: spawnZ + 2, width: 0.5, height: 0.5, type: 'COIN', active: true
-          });
-          entitiesRef.current.push({
-            x, y: 0.5, z: spawnZ + 4, width: 0.5, height: 0.5, type: 'COIN', active: true
-          });
-      } else {
-          const type = Math.random() > 0.5 
-            ? ObstacleType.LOW_BARRIER 
-            : (Math.random() > 0.5 ? ObstacleType.HIGH_BARRIER : ObstacleType.TRAIN);
+      // Jump Physics
+      if (player.y > 0 || player.vy > 0) {
+          player.y += player.vy;
+          player.vy -= GAME_CONFIG.GRAVITY;
+          if (player.y < 0) {
+              player.y = 0;
+              player.vy = 0;
+              if (player.state === 'JUMPING') player.state = 'RUNNING';
+          }
+      }
+
+      // Magnet Logic
+      if (player.magnetTimer > 0) {
+          player.magnetTimer -= deltaTime;
+      }
+
+      // Spawn Logic
+      // Reduced global spawn rate from 0.05 to 0.035 to make it easier
+      if (Math.random() < 0.035) {
+          const typeRand = Math.random();
+          let type: any = ObstacleType.LOW_BARRIER;
           let y = 0;
-          let height = 0;
-          if (type === ObstacleType.LOW_BARRIER) { height = 1.0; } 
-          if (type === ObstacleType.HIGH_BARRIER) { y = 1.5; height = 1.5; } 
-          if (type === ObstacleType.TRAIN) { height = 3.0; }
+          let width = 1;
+          
+          // Adjusted distribution: More Pizzas, Fewer Obstacles
+          if (typeRand > 0.95) {
+               type = 'SPEED_BOOST'; // 5%
+               width = 0.8;
+          } else if (typeRand > 0.55) { // 40% Chance for Pizza (Was ~10%)
+              type = 'PIZZA';
+              width = 0.6;
+              y = 0.5;
+          } else if (typeRand > 0.35) { // 20% High Barrier
+              type = ObstacleType.HIGH_BARRIER;
+              y = 2.5; // High up
+          } else if (typeRand > 0.15) { // 20% Train
+              type = ObstacleType.TRAIN;
+          }
+          // Else Low Barrier (15%)
+
+          // Random Lane Selection (5 Lanes: -2, -1, 0, 1, 2)
+          const lane = Math.floor(Math.random() * 5) - 2;
+          
           entitiesRef.current.push({
-              x, y, z: spawnZ, width: 1.5, height, type, active: true
+              x: lane * GAME_CONFIG.LANE_WIDTH,
+              y: y,
+              z: player.z + GAME_CONFIG.DRAW_DISTANCE,
+              width,
+              height: 1,
+              type,
+              active: true
           });
       }
-  };
 
-  const handleGameOver = () => {
-      onGameOver(Math.floor(statsRef.current.score), statsRef.current.coins);
-  };
-
-  const render = (dt: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const w = canvas.width;
-      const h = canvas.height;
-      const PPU = Math.min(w, h) / 8; 
-      const trackCenterX = w / 2;
-      const playerScreenY = h * 0.8;
-      
-      // Clear
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, w, h);
-
-      // Lanes
-      ctx.fillStyle = '#1e293b'; 
-      const trackWidth = GAME_CONFIG.LANE_WIDTH * 3 * PPU;
-      ctx.fillRect(trackCenterX - trackWidth/2, 0, trackWidth, h);
-
-      // Dividers
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([20, 20]);
-      const dashOffset = (playerRef.current.z * PPU) % 40;
-      ctx.lineDashOffset = -dashOffset;
-      ctx.beginPath();
-      const leftDivX = trackCenterX - (GAME_CONFIG.LANE_WIDTH * 0.5 * PPU);
-      ctx.moveTo(leftDivX, 0);
-      ctx.lineTo(leftDivX, h);
-      const rightDivX = trackCenterX + (GAME_CONFIG.LANE_WIDTH * 0.5 * PPU);
-      ctx.moveTo(rightDivX, 0);
-      ctx.lineTo(rightDivX, h);
-      ctx.stroke();
-      ctx.setLineDash([]); 
-
-      // Entities
-      const drawList = [...entitiesRef.current];
-      const worldToScreen = (wx: number, wz: number) => {
-          const relZ = wz - playerRef.current.z;
-          return {
-              x: trackCenterX + (wx * PPU),
-              y: playerScreenY - (relZ * PPU)
-          };
-      };
-      drawList.sort((a, b) => b.z - a.z); 
-
-      drawList.forEach(ent => {
-          if (!ent.active) return;
-          const pos = worldToScreen(ent.x, ent.z);
-          if (pos.y > h + 100 || pos.y < -100) return;
-
-          const width = ent.width * PPU;
+      // Update Entities
+      for (let i = entitiesRef.current.length - 1; i >= 0; i--) {
+          const entity = entitiesRef.current[i];
           
-          // Shadow 
-          ctx.fillStyle = 'rgba(0,0,0,0.4)';
-          ctx.beginPath();
-          ctx.ellipse(pos.x, pos.y, width/2, width/2, 0, 0, Math.PI*2);
-          ctx.fill();
-
-          const lift = ent.y * PPU * 0.8; 
-          
-          if (ent.type === 'COIN') {
-              ctx.fillStyle = '#fbbf24';
-              ctx.beginPath();
-              const spin = Math.abs(Math.sin(lastTimeRef.current / 200));
-              ctx.ellipse(pos.x, pos.y - lift, (width/2) * spin, width/2, 0, 0, Math.PI*2);
-              ctx.fill();
-              ctx.strokeStyle = '#d97706';
-              ctx.lineWidth = 2;
-              ctx.stroke();
-          } else if (ent.type === 'SPEED_BOOST') {
-              ctx.fillStyle = '#facc15'; 
-              ctx.beginPath();
-              ctx.moveTo(pos.x, pos.y - lift - width);
-              ctx.lineTo(pos.x + width/2, pos.y - lift);
-              ctx.lineTo(pos.x - width/2, pos.y - lift);
-              ctx.fill();
-              ctx.shadowColor = '#fef08a';
-              ctx.shadowBlur = 10;
-              ctx.fill();
-              ctx.shadowBlur = 0;
-          } else if (ent.type === 'PROJECTILE') {
-              // RENDER PROJECTILES
-              if (ent.subType === 'FIREBALL') {
-                  ctx.fillStyle = '#ef4444';
-                  ctx.beginPath(); ctx.arc(pos.x, pos.y - lift, width/2, 0, Math.PI*2); ctx.fill();
-                  ctx.fillStyle = '#fca5a5';
-                  ctx.beginPath(); ctx.arc(pos.x, pos.y - lift, width/3, 0, Math.PI*2); ctx.fill();
-                  ctx.shadowColor = '#b91c1c'; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
-              } else if (ent.subType === 'BLOOD') {
-                  ctx.fillStyle = '#991b1b';
-                  ctx.beginPath();
-                  ctx.arc(pos.x, pos.y - lift, width/2, 0, Math.PI*2);
-                  ctx.moveTo(pos.x, pos.y - lift - width/2);
-                  ctx.lineTo(pos.x - width/4, pos.y - lift - width);
-                  ctx.lineTo(pos.x + width/4, pos.y - lift - width);
-                  ctx.fill();
-              } else if (ent.subType === 'LIGHT_STAR') {
-                  const rotation = lastTimeRef.current * 0.01;
-                  ctx.save();
-                  ctx.translate(pos.x, pos.y - lift);
-                  ctx.rotate(rotation);
-                  ctx.fillStyle = '#fbbf24';
-                  ctx.beginPath();
-                  for (let i = 0; i < 4; i++) {
-                      ctx.rotate(Math.PI / 2);
-                      ctx.moveTo(0, 0); ctx.lineTo(width/2, width/6); ctx.lineTo(width, 0); ctx.lineTo(width/2, -width/6);
+          if (entity.type === 'PROJECTILE') {
+              // Projectiles move FORWARD
+              entity.z += 1.5; 
+              if (entity.z > player.z + GAME_CONFIG.DRAW_DISTANCE) {
+                  entity.active = false;
+              }
+              
+              // Projectile Collision
+              for (let j = 0; j < entitiesRef.current.length; j++) {
+                  const target = entitiesRef.current[j];
+                  if (!target.active || target === entity || target.type === 'PROJECTILE' || target.type === 'PIZZA' || target.type === 'SPEED_BOOST') continue;
+                  
+                  if (Math.abs(entity.x - target.x) < 1 && Math.abs(entity.z - target.z) < 2) {
+                      target.active = false; 
+                      entity.active = false; 
+                      stats.score += 50; 
+                      break;
                   }
-                  ctx.fill();
-                  ctx.shadowColor = '#fcd34d'; ctx.shadowBlur = 10; ctx.stroke();
-                  ctx.restore(); ctx.shadowBlur = 0;
-              } else if (ent.subType === 'NEON_CAT') {
-                  ctx.fillStyle = '#e879f9';
-                  ctx.beginPath();
-                  ctx.arc(pos.x, pos.y - lift, width/2, 0, Math.PI*2);
-                  ctx.moveTo(pos.x - width/3, pos.y - lift - width/3); ctx.lineTo(pos.x - width/2, pos.y - lift - width); ctx.lineTo(pos.x, pos.y - lift - width/2);
-                  ctx.moveTo(pos.x + width/3, pos.y - lift - width/3); ctx.lineTo(pos.x + width/2, pos.y - lift - width); ctx.lineTo(pos.x, pos.y - lift - width/2);
-                  ctx.fill();
-                  ctx.shadowColor = '#d946ef'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
-              } else if (ent.subType === 'ROCKET') {
-                  ctx.fillStyle = '#374151'; 
-                  ctx.fillRect(pos.x - width/4, pos.y - lift - width, width/2, width);
-                  ctx.fillStyle = '#ef4444'; 
-                  ctx.beginPath();
-                  ctx.moveTo(pos.x - width/4, pos.y - lift - width); ctx.lineTo(pos.x + width/4, pos.y - lift - width); ctx.lineTo(pos.x, pos.y - lift - width * 1.5);
-                  ctx.fill();
-                  ctx.fillStyle = '#f59e0b';
-                  ctx.beginPath(); ctx.arc(pos.x, pos.y - lift, width/3, 0, Math.PI*2); ctx.fill();
-              } else if (ent.subType === 'NUMBER_BOLT') {
-                  // 6-7's Projectile
-                  ctx.fillStyle = '#10b981';
-                  ctx.font = `bold ${width}px monospace`;
-                  ctx.textAlign = 'center';
-                  ctx.textBaseline = 'middle';
-                  ctx.fillText("7", pos.x, pos.y - lift - width/2);
-              } else if (ent.subType === 'ECTO_BLAST') {
-                  // Specter's Projectile
-                  ctx.fillStyle = '#22d3ee';
-                  ctx.beginPath();
-                  ctx.arc(pos.x, pos.y - lift, width/2, 0, Math.PI*2);
-                  ctx.fill();
-                  ctx.fillStyle = '#cffafe';
-                  ctx.beginPath();
-                  ctx.arc(pos.x, pos.y - lift, width/3, 0, Math.PI*2);
-                  ctx.fill();
-                  ctx.shadowColor = '#0891b2'; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
-              } else {
-                  // Handcuffs
-                  ctx.fillStyle = '#94a3b8'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
-                  ctx.beginPath(); ctx.arc(pos.x - width/4, pos.y - lift, width/4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                  ctx.beginPath(); ctx.arc(pos.x + width/4, pos.y - lift, width/4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                  ctx.beginPath(); ctx.moveTo(pos.x - width/4, pos.y - lift); ctx.lineTo(pos.x + width/4, pos.y - lift); ctx.stroke();
               }
 
-          } else if (ent.type === ObstacleType.TRAIN) {
-              ctx.fillStyle = '#475569';
-              const trainLen = width * 2.5;
-              ctx.fillRect(pos.x - width/2, pos.y - lift - trainLen/2, width, trainLen);
-              ctx.fillStyle = '#64748b';
-              ctx.fillRect(pos.x - width/2 + 4, pos.y - lift - trainLen/2 + 4, width - 8, trainLen - 8);
           } else {
-              // Barrier
-              ctx.fillStyle = ent.type === ObstacleType.HIGH_BARRIER ? '#dc2626' : '#ea580c';
-              ctx.fillRect(pos.x - width/2, pos.y - lift - width/2, width, width/2); 
-              ctx.fillStyle = 'rgba(255,255,255,0.2)';
-              ctx.fillRect(pos.x - width/2, pos.y - lift - width/2, width, 5);
+              // Entities move towards player
+              entity.z -= stats.speed * 20; 
           }
-      });
 
-      // Render Player
-      const player = playerRef.current;
-      const pPos = worldToScreen(player.x, player.z); 
+          // Cull objects
+          if (entity.z < player.z - 5) {
+              entity.active = false;
+          }
+
+          // Collision Detection
+          if (entity.active && entity.type !== 'PROJECTILE') {
+              if (Math.abs(entity.z - player.z) < 1.5) {
+                  if (Math.abs(entity.x - player.x) < 0.8) {
+                       const playerBottom = player.y;
+                       
+                       let collision = false;
+                       
+                       if (entity.type === 'PIZZA') {
+                           stats.coins += 1;
+                           setHudCoins(stats.coins);
+                           entity.active = false;
+
+                           if (stats.coins % 10 === 0) {
+                               player.ammo += 3;
+                               setHudAmmo(player.ammo);
+                               setShowAmmoReload(true);
+                               setTimeout(() => setShowAmmoReload(false), 2000);
+                           }
+
+                           continue;
+                       }
+                       
+                       if (entity.type === 'SPEED_BOOST') {
+                           stats.speed += GAME_CONFIG.SPEED_BOOST_AMOUNT;
+                           stats.collectedPowerups++;
+                           entity.active = false;
+                           setShowSpeedBoost(true);
+                           setTimeout(() => setShowSpeedBoost(false), 1500);
+                           continue;
+                       }
+
+                       if (entity.type === ObstacleType.LOW_BARRIER) {
+                           if (playerBottom < 0.5) collision = true;
+                       } else if (entity.type === ObstacleType.HIGH_BARRIER) {
+                           if (player.state !== 'ROLLING') collision = true;
+                       } else if (entity.type === ObstacleType.TRAIN) {
+                           if (character.powerUp !== PowerUpType.PHASE_SHIFT) collision = true;
+                       }
+
+                       if (collision && !player.invincible) {
+                           onGameOver(stats.score, stats.coins);
+                           return; 
+                       }
+                  }
+              }
+          }
+      }
       
-      const pWidth = 1.0 * PPU; // Base size
-      const jumpScale = 1 + (player.y * 0.3); // Scale factor
+      entitiesRef.current = entitiesRef.current.filter(e => e.active);
+
+      // Magnet
+      if (character.powerUp === PowerUpType.MAGNET) {
+           entitiesRef.current.forEach(e => {
+               if (e.type === 'PIZZA' && e.active) {
+                   if (e.z > player.z && e.z < player.z + 15) {
+                       e.x += (player.x - e.x) * 0.1; 
+                   }
+               }
+           });
+      }
+
+      draw();
+      requestRef.current = requestAnimationFrame(gameLoop);
+  };
+
+  // Perspective Projection Helper
+  const project = (x: number, y: number, z: number, canvasWidth: number, canvasHeight: number) => {
+      // Camera Settings
+      const focalLength = 300;
+      const cameraY = 1.5; // Height of camera above track
+      const cameraZ = -5;  // Camera distance behind player
+      const horizonY = canvasHeight * 0.35; // Horizon line position
+
+      // Relative coordinates
+      const relZ = z - cameraZ;
+      const scale = focalLength / (focalLength + relZ);
       
-      // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      // Projected coordinates
+      // Scale lane width based on screen width to ensure 5 lanes fit
+      const xFactor = canvasWidth / 12; // Adjusted for 5 lanes
+      const projX = (canvasWidth / 2) + (x * xFactor * scale);
+      
+      // Y Maps Z to vertical space. 
+      const projY = horizonY + ((cameraY - y) * 100 * scale);
+
+      // Re-adjust Y so that Z=0 is near bottom of screen
+      const groundY = canvasHeight * 0.9;
+      const runnerY = horizonY + (groundY - horizonY) * scale - (y * 50 * scale);
+
+      return { x: projX, y: runnerY, scale };
+  };
+
+  const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number, speed: number) => {
+      // 1. Cyberpunk Gradient Sky
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#020617'); // Slate 950
+      gradient.addColorStop(0.3, '#1e1b4b'); // Indigo 950
+      gradient.addColorStop(0.6, '#4c1d95'); // Violet 800
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      const horizonY = height * 0.35;
+
+      // 2. Retro Sun
+      const sunX = width / 2;
+      const sunY = horizonY - 20;
+      const sunSize = height * 0.15;
+      
+      ctx.save();
+      ctx.shadowBlur = 80;
+      ctx.shadowColor = '#f472b6'; 
+      const sunGrad = ctx.createLinearGradient(sunX, sunY - sunSize, sunX, sunY + sunSize);
+      sunGrad.addColorStop(0, '#fcd34d'); 
+      sunGrad.addColorStop(1, '#be185d'); 
+      ctx.fillStyle = sunGrad;
       ctx.beginPath();
-      const shadowSize = (pWidth/2) / (1 + player.y);
-      ctx.ellipse(pPos.x, pPos.y, shadowSize, shadowSize, 0, 0, Math.PI*2);
+      ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Player Body
+      // Scanlines on sun
+      ctx.fillStyle = '#4c1d95';
+      for(let i=0; i<10; i++) {
+          ctx.fillRect(sunX - sunSize, sunY + (i*8) - 20, sunSize*2, 2);
+      }
+      ctx.restore();
+
+      // 3. Grid Floor (Perspective)
       ctx.save();
-      ctx.translate(pPos.x, pPos.y);
-      ctx.scale(jumpScale, jumpScale); 
       
-      // ... (Reusing existing drawing logic, shortened for this block to focus on structure) ...
-      // I will copy the drawing logic from the previous file content but ensuring 6-7 uses standard rendering mostly.
-      
-      if (character.id === 'char_1') { // ROBERTO
-          ctx.fillStyle = character.color;
-          ctx.beginPath(); ctx.arc(0, 0, pWidth/2, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = '#3e2723'; 
-          const curlSize = pWidth / 6;
-          for(let i=0; i<8; i++) {
-              const angle = (i / 8) * Math.PI * 2;
-              const cx = Math.cos(angle) * (pWidth/2.2);
-              const cy = Math.sin(angle) * (pWidth/2.2);
-              ctx.beginPath(); ctx.arc(cx, cy, curlSize, 0, Math.PI*2); ctx.fill();
-          }
-          ctx.fillStyle = '#64748b'; 
-          ctx.fillRect(-pWidth/2 - curlSize/2, -pWidth/6, pWidth/5, pWidth/3);
-          ctx.fillRect(pWidth/2 - curlSize, -pWidth/6, pWidth/5, pWidth/3);
-          ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(0, 0, pWidth/2 + 2, Math.PI, 0); ctx.stroke();
-      } else if (character.id === 'char_2') { // STEVE
-          ctx.fillStyle = '#5d4037'; ctx.fillRect(-pWidth/6, -pWidth/6, pWidth/3, pWidth/3);
-          ctx.fillStyle = '#9ca3af';
-          ctx.beginPath(); ctx.moveTo(pWidth/6, -pWidth/4); ctx.quadraticCurveTo(pWidth/1.5, 0, pWidth/6, pWidth/4); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(-pWidth/6, -pWidth/4); ctx.quadraticCurveTo(-pWidth/1.5, 0, -pWidth/6, pWidth/4); ctx.fill();
-          ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-pWidth/3, 0, pWidth/10, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(pWidth/3, 0, pWidth/10, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-pWidth/3, 0, pWidth/20, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(pWidth/3, 0, pWidth/20, 0, Math.PI*2); ctx.fill();
-      } else if (character.id === 'char_3') { // EL
-          ctx.fillStyle = character.accentColor; ctx.beginPath(); ctx.arc(0, 0, pWidth/2, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = '#fca5a5'; ctx.beginPath(); ctx.arc(0, 0, pWidth/3, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = 'rgba(50,30,30,0.2)'; ctx.beginPath(); ctx.arc(0, 0, pWidth/3.2, 0, Math.PI*2); ctx.fill();
-      } else if (character.id === 'char_4') { // LORD AMBER
-          ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.moveTo(-pWidth/2, pWidth/2); ctx.quadraticCurveTo(0, -pWidth/2, pWidth/2, pWidth/2); ctx.fill();
-          ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(-pWidth/4, pWidth/4); ctx.lineTo(pWidth/4, pWidth/4); ctx.lineTo(0, pWidth/2); ctx.fill();
-      } else if (character.id === 'char_5') { // HOPPER
-          ctx.fillStyle = '#a16207'; ctx.beginPath(); ctx.arc(0, 0, pWidth/2, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = '#78350f'; ctx.beginPath(); ctx.ellipse(0, -pWidth/10, pWidth/2.2, pWidth/2.2, 0, 0, Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.arc(0, -pWidth/10, pWidth/4, 0, Math.PI*2); ctx.fill();
-      } else if (character.id === 'char_6') { // 6-7
-          ctx.fillStyle = '#10b981'; ctx.font = `bold ${pWidth/1.5}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText("6", -pWidth/4, 0); ctx.fillStyle = '#34d399'; ctx.fillText("7", pWidth/4, 0);
-      } else if (character.id === 'char_7') { // SPECTER
-           ctx.fillStyle = '#cbd5e1'; 
-           ctx.beginPath();
-           ctx.moveTo(-pWidth/3, pWidth/2); ctx.lineTo(-pWidth/3, 0); ctx.quadraticCurveTo(0, -pWidth/2, pWidth/3, 0); ctx.lineTo(pWidth/3, pWidth/2);
-           ctx.fill();
-           ctx.fillStyle = '#0f172a';
-           ctx.beginPath(); ctx.arc(-pWidth/6, 0, pWidth/12, 0, Math.PI*2); ctx.fill();
-           ctx.beginPath(); ctx.arc(pWidth/6, 0, pWidth/12, 0, Math.PI*2); ctx.fill();
-      } else if (character.id === 'char_8') { // SHOTGUN-BOMB
-          ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.arc(0, 0, pWidth/2, 0, Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(-pWidth/3, -pWidth/3); ctx.lineTo(-pWidth/2, -pWidth/2); ctx.lineTo(-pWidth/4, -pWidth/2); ctx.moveTo(pWidth/3, -pWidth/3); ctx.lineTo(pWidth/2, -pWidth/2); ctx.lineTo(pWidth/4, -pWidth/2); ctx.fill();
-          ctx.fillStyle = '#fbcfe8'; ctx.beginPath(); ctx.ellipse(0, pWidth/6, pWidth/6, pWidth/8, 0, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = '#be185d'; ctx.beginPath(); ctx.arc(-pWidth/12, pWidth/6, pWidth/20, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(pWidth/12, pWidth/6, pWidth/20, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-pWidth/5, -pWidth/12, pWidth/12, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(pWidth/5, -pWidth/12, pWidth/12, 0, Math.PI*2); ctx.fill();
-          ctx.save(); ctx.rotate(-Math.PI/4); ctx.fillStyle = '#374151'; ctx.fillRect(0, -pWidth/2, pWidth/3, pWidth); ctx.fillStyle = '#ef4444'; ctx.fillRect(0, -pWidth/2, pWidth/3, pWidth/6); ctx.restore();
-      } else {
-          ctx.fillStyle = character.color; ctx.beginPath(); ctx.arc(0, 0, pWidth/2, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = character.accentColor; ctx.beginPath(); ctx.arc(0, -pWidth/6, pWidth/4, 0, Math.PI*2); ctx.fill();
+      // Floor Gradient
+      const floorGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+      floorGrad.addColorStop(0, '#000000');
+      floorGrad.addColorStop(1, '#312e81');
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(0, horizonY, width, height - horizonY);
+
+      ctx.strokeStyle = '#c026d3'; 
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#d946ef';
+
+      // Vertical Lines (Lanes dividers)
+      // 5 Lanes: -2, -1, 0, 1, 2. Lines at +/- 0.5, 1.5, 2.5
+      for (let i = -3; i <= 3; i++) {
+          const laneBoundary = (i + 0.5) * GAME_CONFIG.LANE_WIDTH;
+          
+          const pNear = project(laneBoundary, 0, 0, width, height);
+          const pFar = project(laneBoundary, 0, 100, width, height);
+          
+          ctx.beginPath();
+          ctx.moveTo(pNear.x, pNear.y);
+          ctx.lineTo(pFar.x, pFar.y);
+          ctx.stroke();
       }
 
-      if (player.invincible) {
-          ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, (pWidth/2) + 5, 0, Math.PI*2); ctx.stroke();
-      }
+      // Horizontal Lines (scrolling)
+      const phase = (statsRef.current.distance * 10) % 20;
+      for (let z = 0; z < 20; z++) {
+          const worldZ = (z * 5) - phase;
+          if (worldZ < -2) continue;
 
+          // Project full width (-2.5 to 2.5 lanes roughly)
+          const edge = 2.5 * GAME_CONFIG.LANE_WIDTH;
+          const pLeft = project(-edge, 0, worldZ, width, height);
+          const pRight = project(edge, 0, worldZ, width, height);
+
+          // Distance fading
+          const alpha = Math.max(0, 1 - (worldZ / 80));
+          ctx.globalAlpha = alpha;
+
+          ctx.beginPath();
+          ctx.moveTo(pLeft.x, pLeft.y);
+          ctx.lineTo(pRight.x, pRight.y);
+          ctx.stroke();
+      }
+      
       ctx.restore();
   };
 
+  const draw = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Draw Background
+    drawBackground(ctx, canvas.width, canvas.height, statsRef.current.speed);
+
+    // Sort entities by Z (painters algorithm, far to near)
+    const renderList = [...entitiesRef.current];
+    renderList.sort((a, b) => b.z - a.z);
+
+    renderList.forEach(entity => {
+         const relZ = entity.z - playerRef.current.z;
+         
+         if (relZ > -2) {
+             const proj = project(entity.x, entity.y, relZ, canvas.width, canvas.height);
+             drawEntity(ctx, entity, proj.x, proj.y, proj.scale);
+         }
+    });
+
+    // Draw Player
+    const player = playerRef.current;
+    const proj = project(player.x, player.y, 0, canvas.width, canvas.height);
+    drawPlayer(ctx, proj.x, proj.y, proj.scale);
+  };
+
+  const drawEntity = (ctx: CanvasRenderingContext2D, entity: Entity, x: number, y: number, scale: number) => {
+      // Base unit size is roughly 50px at scale 1
+      const baseSize = 50; 
+      const width = entity.width * baseSize * scale;
+      const height = entity.height * baseSize * scale;
+      
+      ctx.save();
+      
+      if (entity.type === 'PIZZA') {
+          const size = width;
+          // GREEN PIZZA (Safe/Collect)
+          ctx.shadowColor = '#22c55e'; // Green-500
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = '#22c55e'; // Green Pizza Dough
+          ctx.beginPath(); ctx.arc(x, y - size/2, size/2, 0, Math.PI*2); ctx.fill();
+          // Details
+          ctx.fillStyle = '#bbf7d0'; // Light Green Cheese
+          ctx.beginPath(); ctx.arc(x, y - size/2, size/2.5, 0, Math.PI*2); ctx.fill();
+          // Pepperoni (Darker Green)
+          ctx.fillStyle = '#166534';
+          ctx.beginPath(); ctx.arc(x - size/6, y - size/2 - size/6, size/8, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x + size/6, y - size/2 + size/6, size/8, 0, Math.PI*2); ctx.fill();
+          
+      } else if (entity.type === 'SPEED_BOOST') {
+          const size = width;
+          ctx.shadowColor = '#06b6d4'; // Cyan Glow
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = '#22d3ee';
+          ctx.beginPath();
+          ctx.moveTo(x, y - size);
+          ctx.lineTo(x + size/2, y - size/2);
+          ctx.lineTo(x, y);
+          ctx.lineTo(x - size/2, y - size/2);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${size/1.5}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⚡', x, y - size/2);
+
+      } else if (entity.type === 'PROJECTILE') {
+          const size = width * 0.5;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = '#fff';
+          
+          if (entity.subType === 'SOCCER_BALL') {
+               ctx.fillStyle = '#fff';
+               ctx.beginPath(); ctx.arc(x, y - size, size, 0, Math.PI*2); ctx.fill();
+               ctx.strokeStyle = '#000'; ctx.stroke();
+          } else {
+              // Energy Bolt
+              ctx.fillStyle = '#a855f7'; 
+              if (entity.subType === 'FIREBALL') ctx.fillStyle = '#f97316';
+              if (entity.subType === 'ECTO_BLAST') ctx.fillStyle = '#22d3ee';
+              
+              ctx.beginPath(); ctx.arc(x, y - size, size, 0, Math.PI*2); ctx.fill();
+              ctx.fillStyle = '#fff';
+              ctx.beginPath(); ctx.arc(x, y - size, size/2, 0, Math.PI*2); ctx.fill();
+          }
+
+      } else if (entity.type === ObstacleType.TRAIN) {
+          // RED OBSTACLE
+          ctx.shadowColor = '#dc2626'; // Red-600
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = '#991b1b'; // Red-800
+          ctx.strokeStyle = '#ef4444'; // Red-500
+          ctx.lineWidth = 2;
+          
+          // Front Face
+          ctx.fillRect(x - width/2, y - height, width, height);
+          ctx.strokeRect(x - width/2, y - height, width, height);
+          
+          // Glowing Window
+          ctx.shadowColor = '#fcd34d';
+          ctx.fillStyle = '#fcd34d';
+          ctx.fillRect(x - width/3, y - height + (height*0.2), width/1.5, height/3);
+
+      } else if (entity.type === ObstacleType.HIGH_BARRIER) {
+          // RED OBSTACLE (Gate)
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 15;
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.2)'; // Red Transparent
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          
+          // Top bar
+          ctx.strokeRect(x - width/2, y - height, width, height/3);
+          
+          // Posts
+          ctx.fillRect(x - width/2, y - height, width/8, height);
+          ctx.fillRect(x + width/2 - width/8, y - height, width/8, height);
+
+      } else {
+          // RED OBSTACLE (Low Barrier)
+          ctx.shadowColor = '#dc2626';
+          ctx.shadowBlur = 15;
+          ctx.fillStyle = 'rgba(220, 38, 38, 0.4)';
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          
+          ctx.fillRect(x - width/2, y - height/2, width, height/2);
+          ctx.strokeRect(x - width/2, y - height/2, width, height/2);
+          
+          // Warning Stripes
+          ctx.beginPath();
+          ctx.moveTo(x - width/4, y);
+          ctx.lineTo(x, y - height/2);
+          ctx.stroke();
+      }
+      
+      ctx.restore();
+  };
+
+  const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, scale: number) => {
+      const player = playerRef.current;
+      const baseSize = 50;
+      const size = baseSize * scale;
+
+      // Player Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      // Shadow scales with distance from ground (jump)
+      const shadowScale = Math.max(0.5, 1 - (player.y * 0.2));
+      ctx.ellipse(x, y, (size/2) * shadowScale, (size/4) * shadowScale, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Adjust Y for jump
+      const visualY = y - (player.y * 100 * scale);
+
+      // AMMO GLOW
+      if (player.ammo > 0) {
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = '#22c55e'; // Green-500
+      } else {
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = character.accentColor;
+      }
+
+      ctx.save();
+      ctx.translate(x, visualY - size/2); // Center pivot
+
+      const char = character;
+
+      // Draw Character Box
+      if (!['char_6', 'char_8', 'char_9', 'char_10'].includes(char.id)) {
+          ctx.fillStyle = char.color;
+          ctx.fillRect(-size/2, -size/2, size, size);
+          
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-size/2, -size/2, size, size);
+
+          // Eyes
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(-size*0.3, -size*0.3, size*0.2, size*0.2);
+          ctx.fillRect(size*0.1, -size*0.3, size*0.2, size*0.2);
+
+          // Roberto Hat
+          if (char.id === 'char_1') {
+              ctx.fillStyle = '#1e3a8a';
+              ctx.fillRect(-size/2 - 2, -size/2 - size*0.2, size + 4, size*0.3);
+          }
+      } else {
+         // Special Chars
+         if (char.id === 'char_9') { // Bragnaldo
+             ctx.fillStyle = '#166534'; ctx.fillRect(-size/2, -size/2, size, size);
+             ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-size/2, -size/2, size, size);
+             ctx.fillStyle = '#dc2626'; ctx.fillRect(-size/2, size*0.25, size, size*0.25);
+             ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, -size*0.3, size*0.4, 0, Math.PI*2); ctx.fill();
+         } else if (char.id === 'char_10') { // Cyclo
+             ctx.fillStyle = '#0f172a';
+             ctx.beginPath(); ctx.arc(-size*0.6, size*0.2, size*0.25, 0, Math.PI*2); ctx.fill();
+             ctx.beginPath(); ctx.arc(size*0.6, size*0.2, size*0.25, 0, Math.PI*2); ctx.fill();
+             ctx.fillStyle = char.color; ctx.fillRect(-size*0.25, -size*0.5, size*0.5, size*0.5);
+             ctx.strokeStyle = '#38bdf8'; ctx.strokeRect(-size*0.25, -size*0.5, size*0.5, size*0.5);
+         } else if (char.id === 'char_6') {
+             ctx.font = `bold ${size}px monospace`;
+             ctx.fillStyle = '#10b981'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('67', 0, 0);
+         } else if (char.id === 'char_8') { // Pig
+             ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.arc(0, 0, size/2, 0, Math.PI*2); ctx.fill();
+             ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+             ctx.fillStyle = '#374151'; ctx.fillRect(-size*0.4, -size*0.3, size*0.2, size*0.6);
+         }
+      }
+
+      ctx.restore();
+      ctx.shadowBlur = 0;
+  };
+
   return (
-    <div className="relative w-full h-full bg-slate-900 overflow-hidden" 
-         onTouchStart={handleTouchStart} 
-         onTouchEnd={handleTouchEnd}
-    >
+    <div className="relative w-full h-full bg-slate-900 overflow-hidden font-mono">
       <canvas 
-        ref={canvasRef} 
-        width={window.innerWidth} 
-        height={window.innerHeight} 
+        ref={canvasRef}
+        width={window.innerWidth}
+        height={window.innerHeight}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className="block"
       />
       
-      {/* HUD */}
+      {/* HUD - Cyberpunk UI */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
-          <div className="flex flex-col gap-1">
-              <div className="bg-slate-900/80 p-2 rounded border border-slate-700 text-white font-mono text-2xl font-bold">
-                  {hudScore.toString().padStart(6, '0')}
+          <div className="flex flex-col gap-3">
+            {/* Score */}
+            <div className="bg-slate-900/60 backdrop-blur-md px-6 py-2 border-l-4 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)] transform skew-x-[-12deg]">
+                <div className="transform skew-x-[12deg]">
+                    <span className="text-[10px] text-cyan-300 block font-bold uppercase tracking-widest mb-1">Stig</span>
+                    <span className="text-2xl text-white font-black drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">
+                        {hudScore.toString().padStart(6, '0')}
+                    </span>
+                </div>
+            </div>
+            {/* Pizza (Now Green) */}
+            <div className="bg-slate-900/60 backdrop-blur-md px-6 py-2 border-l-4 border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.4)] transform skew-x-[-12deg]">
+                 <div className="transform skew-x-[12deg] flex items-center gap-2">
+                    <span className="text-xl filter drop-shadow grayscale-0">🍕</span> 
+                    <span className="text-2xl text-green-100 font-bold">{hudCoins}</span>
+                </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-4">
+              <button 
+                className="pointer-events-auto p-3 bg-slate-800/80 border border-slate-600 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                onClick={() => setIsPaused(!isPaused)}
+              >
+                  <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300">
+                     <Pause size={20} />
+                  </div>
+              </button>
+              
+              {/* Ammo Counter */}
+              <div className={`
+                transition-all duration-300 px-6 py-3 border-r-4 transform skew-x-[12deg] backdrop-blur-md
+                ${hudAmmo > 0 
+                    ? 'bg-green-900/60 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.5)]' 
+                    : 'bg-slate-900/60 border-slate-600 opacity-80'}
+              `}>
+                  <div className="transform skew-x-[-12deg] flex items-center gap-3">
+                      <Crosshair size={24} className={hudAmmo > 0 ? 'text-green-400 animate-pulse' : 'text-slate-500'} />
+                      <div className="flex flex-col items-end">
+                          <span className="text-[10px] text-green-300 uppercase font-bold tracking-widest">Skot</span>
+                          <span className={`text-2xl font-black ${hudAmmo > 0 ? 'text-white' : 'text-slate-500'}`}>{hudAmmo}</span>
+                      </div>
+                  </div>
               </div>
           </div>
+      </div>
 
-          <button 
-            onClick={() => setIsPaused(!isPaused)}
-            className="pointer-events-auto p-2 bg-white/10 rounded-full hover:bg-white/20"
-          >
-             <Pause className="text-white" />
-          </button>
-
-          <div className="flex flex-col gap-1 items-end">
-             {/* Coin Counter */}
-             <div className="bg-amber-500/90 p-2 rounded border border-amber-300 text-white font-mono text-2xl font-bold flex items-center gap-2 shadow-lg">
-                 <span>{hudCoins}</span>
-                 <div className="w-4 h-4 rounded-full bg-yellow-300 border border-yellow-600" />
-             </div>
-             
-             {/* Ammo Counter */}
-             <div className={`mt-2 p-2 rounded border font-mono font-bold flex items-center gap-2 shadow-lg transition-all
-                  ${hudAmmo > 0 ? 'bg-red-600 border-red-400 text-white animate-pulse' : 'bg-slate-800 border-slate-600 text-slate-500'}
-             `}>
-                  <span>{hudAmmo}</span>
-                  <Crosshair size={16} />
-             </div>
-             <div className="text-[10px] text-slate-400 mt-1">10 COINS = +3 AMMO</div>
-          </div>
+      {/* Messages */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col gap-6">
+          {showSpeedBoost && (
+              <div className="text-5xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)] animate-pulse skew-x-[-10deg]">
+                  HRÖÐUN!
+              </div>
+          )}
+          {showAmmoReload && (
+              <div className="text-3xl font-black text-white bg-green-600/90 px-8 py-4 border-2 border-white shadow-[0_0_30px_rgba(34,197,94,0.8)] skew-x-[-10deg] animate-bounce">
+                  SKOT HLAÐIN!
+              </div>
+          )}
+          {hudAmmo > 0 && !isPaused && (
+              <div className="absolute top-1/4 animate-pulse text-green-400 font-black tracking-[0.5em] text-xl drop-shadow-[0_0_10px_rgba(74,222,128,0.8)] bg-black/40 px-4 py-1 skew-x-[-20deg] border-l-2 border-r-2 border-green-500">
+                  BYSSA HLAÐIN
+              </div>
+          )}
+           {isPaused && (
+              <div className="bg-black/80 p-10 border-2 border-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.5)] skew-x-[-5deg]">
+                  <h2 className="text-5xl font-black text-white tracking-widest mb-2 text-center">PÁSA</h2>
+                  <p className="text-cyan-400 text-xs tracking-[0.3em] text-center">KERFI Í BIÐSTÖÐU</p>
+              </div>
+          )}
       </div>
       
-      {/* Active Character Badge */}
-      <div className="absolute bottom-6 left-6 pointer-events-none">
-          <div className="flex items-center gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-600">
-               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: character.color }}>
-                   <span className="text-white font-bold text-xs">P{character.id.split('_')[1]}</span>
-               </div>
-               <div className="flex flex-col">
-                   <span className="text-white text-sm font-bold">{character.name}</span>
-                   <span className="text-xs text-slate-400">{character.powerUp.replace('_', ' ')}</span>
-                   <span className="text-[10px] text-cyan-400 font-mono">SHOOT: CTRL</span>
-               </div>
-          </div>
+      {/* Controls Hint */}
+      <div className="absolute bottom-6 w-full text-center">
+         <div className="inline-block bg-black/60 backdrop-blur-sm px-8 py-2 border border-white/10 skew-x-[-20deg]">
+             <div className="skew-x-[20deg] text-cyan-500 text-[10px] font-bold tracking-widest">
+                 ARROWS: MOVE • SPACE: JUMP • CTRL: SHOOT
+             </div>
+         </div>
       </div>
-
-      {showSpeedBoost && (
-        <div className="absolute top-1/4 left-0 right-0 flex justify-center pointer-events-none animate-bounce">
-            <div className="flex items-center gap-2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-xl shadow-lg border-2 border-white">
-                <Zap className="fill-black" />
-                SPEED UP!
-            </div>
-        </div>
-      )}
-
-      {showAmmoReload && (
-        <div className="absolute top-1/3 left-0 right-0 flex justify-center pointer-events-none animate-bounce">
-            <div className="flex items-center gap-2 bg-red-500 text-white px-6 py-2 rounded-full font-black text-xl shadow-lg border-2 border-white">
-                <Crosshair />
-                RELOAD!
-            </div>
-        </div>
-      )}
-
-      {isPaused && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm pointer-events-none">
-              <h2 className="text-4xl font-bold text-white tracking-widest">PAUSED</h2>
-          </div>
-      )}
     </div>
   );
 };

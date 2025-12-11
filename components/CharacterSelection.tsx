@@ -1,7 +1,7 @@
 import React from 'react';
 import { Character, PowerUpType } from '../types';
 import { CHARACTERS } from '../constants';
-import { User, Shield, Zap, Magnet, Coins, Timer, Ghost, Wind } from 'lucide-react';
+import { User, Shield, Zap, Magnet, Timer, Ghost, Wind, CircleDot } from 'lucide-react';
 
 interface CharacterSelectionProps {
   onSelect: (character: Character) => void;
@@ -13,7 +13,7 @@ const PowerUpIcon = ({ type, className }: { type: PowerUpType, className?: strin
         case PowerUpType.SHIELD: return <Shield className={className} />;
         case PowerUpType.DOUBLE_SCORE: return <Zap className={className} />;
         case PowerUpType.MAGNET: return <Magnet className={className} />;
-        case PowerUpType.DOUBLE_COINS: return <Coins className={className} />;
+        case PowerUpType.DOUBLE_COINS: return <CircleDot className={className} />; // Represents Pizza/Double Coin
         case PowerUpType.SLOW_TIME: return <Timer className={className} />;
         case PowerUpType.PHASE_SHIFT: return <Ghost className={className} />;
         case PowerUpType.FLOATY: return <Wind className={className} />;
@@ -169,18 +169,65 @@ const ShotgunBombPortrait = () => (
     </svg>
 );
 
+// Custom SVG Portrait for Bragnaldo (Soccer Star)
+const BragnaldoPortrait = () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
+        {/* Green Jersey */}
+        <path d="M 20 100 L 20 60 Q 50 50 80 60 L 80 100" fill="#166534" />
+        <rect x="40" y="60" width="20" height="40" fill="#dc2626" opacity="0.8" />
+        
+        {/* Head */}
+        <circle cx="50" cy="45" r="28" fill="#fcd34d" /> {/* Blond hair base */}
+        <circle cx="50" cy="45" r="22" fill="#fca5a5" /> {/* Face */}
+
+        {/* Curly Hair Detail */}
+        <circle cx="30" cy="35" r="8" fill="#fcd34d" />
+        <circle cx="70" cy="35" r="8" fill="#fcd34d" />
+        <circle cx="50" cy="20" r="10" fill="#fcd34d" />
+        <circle cx="25" cy="50" r="6" fill="#fcd34d" />
+        <circle cx="75" cy="50" r="6" fill="#fcd34d" />
+
+        {/* Face Features */}
+        <circle cx="42" cy="45" r="3" fill="#1f2937" />
+        <circle cx="58" cy="45" r="3" fill="#1f2937" />
+        <path d="M 45 60 Q 50 65 55 60" stroke="#1f2937" strokeWidth="2" fill="none" />
+    </svg>
+);
+
+// Custom SVG Portrait for Cyclo (Half Man Half Motorcycle)
+const CycloPortrait = () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
+         {/* Motorcycle Body */}
+         <rect x="25" y="55" width="50" height="25" fill="#334155" rx="5" />
+         <circle cx="20" cy="75" r="15" fill="#0f172a" stroke="#cbd5e1" strokeWidth="4" />
+         <circle cx="80" cy="75" r="15" fill="#0f172a" stroke="#cbd5e1" strokeWidth="4" />
+         
+         {/* Man Torso (Merging) */}
+         <path d="M 35 55 L 35 30 Q 50 20 65 30 L 65 55 Z" fill="#475569" />
+         
+         {/* Head */}
+         <circle cx="50" cy="20" r="12" fill="#fca5a5" />
+         {/* Helmet/Goggles */}
+         <path d="M 38 18 L 62 18 L 60 25 L 40 25 Z" fill="#38bdf8" opacity="0.8" />
+         <path d="M 35 15 Q 50 5 65 15" stroke="#000" strokeWidth="2" fill="none"/>
+         
+         {/* Handlebars */}
+         <path d="M 30 40 L 10 35" stroke="#94a3b8" strokeWidth="3" />
+         <path d="M 70 40 L 90 35" stroke="#94a3b8" strokeWidth="3" />
+    </svg>
+);
 
 const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, selectedId }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-slate-900 text-white">
-      <div className="mb-8 text-center animate-fade-in-down">
-        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-600 mb-2 italic transform -skew-x-6">
-          TURN AROUND
+    <div className="flex flex-col items-center justify-center min-h-screen p-2 bg-slate-900 text-white overflow-hidden">
+      <div className="mb-4 text-center animate-fade-in-down">
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-600 mb-1 italic transform -skew-x-6">
+          5. bekkur
         </h1>
-        <p className="text-slate-400">Select Pilot Module</p>
+        <p className="text-slate-400 text-xs">Veldu Leikmann</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl">
+      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 w-full max-w-7xl px-2">
         {CHARACTERS.map((char) => {
           const isSelected = selectedId === char.id;
           
@@ -193,35 +240,37 @@ const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, selec
           else if (char.id === 'char_6') Portrait = SixSevenPortrait;
           else if (char.id === 'char_7') Portrait = SpecterPortrait;
           else if (char.id === 'char_8') Portrait = ShotgunBombPortrait;
+          else if (char.id === 'char_9') Portrait = BragnaldoPortrait;
+          else if (char.id === 'char_10') Portrait = CycloPortrait;
 
           return (
             <button
               key={char.id}
               onClick={() => onSelect(char)}
               className={`
-                relative group flex flex-col items-center p-4 rounded-xl transition-all duration-300
-                border-2 overflow-hidden
+                relative group flex flex-col items-center p-2 rounded-lg transition-all duration-300
+                border overflow-hidden
                 ${isSelected 
-                  ? 'border-white bg-slate-800 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]' 
+                  ? 'border-white bg-slate-800 scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)] z-10' 
                   : 'border-slate-700 bg-slate-800/50 hover:border-slate-500 hover:bg-slate-700'}
               `}
             >
               {/* Character Visual Placeholder */}
               <div 
-                className={`w-20 h-20 rounded-lg mb-4 flex items-center justify-center shadow-inner transition-transform group-hover:scale-110 overflow-hidden`}
+                className={`w-12 h-12 rounded-md mb-2 flex items-center justify-center shadow-inner transition-transform group-hover:scale-110 overflow-hidden`}
                 style={{ backgroundColor: (Portrait) ? '#fff' : char.color }}
               >
                  {Portrait ? (
                      <div className="w-full h-full"><Portrait /></div>
                  ) : (
-                     <PowerUpIcon type={char.powerUp} className="text-white w-8 h-8 opacity-90" />
+                     <PowerUpIcon type={char.powerUp} className="text-white w-6 h-6 opacity-90" />
                  )}
               </div>
 
-              <h3 className="font-mono font-bold text-base mb-1 tracking-wider">{char.name}</h3>
+              <h3 className="font-mono font-bold text-[10px] md:text-xs mb-1 tracking-wider whitespace-nowrap overflow-hidden text-ellipsis w-full">{char.name}</h3>
               
-              <div className="text-xs text-slate-400 text-center mb-2 min-h-[40px] leading-tight flex items-center justify-center px-1">
-                <span>{char.description}</span>
+              <div className="hidden md:flex text-[8px] text-slate-400 text-center mb-1 min-h-[30px] items-center justify-center px-1 leading-none opacity-80">
+                <span className="line-clamp-2">{char.description}</span>
               </div>
 
               {isSelected && (
@@ -233,8 +282,8 @@ const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, selec
       </div>
       
       {selectedId && (
-        <div className="mt-8 animate-bounce">
-            <span className="text-sm text-cyan-400 font-mono tracking-widest">SYSTEM READY - PRESS START</span>
+        <div className="mt-4 animate-bounce">
+            <span className="text-xs text-cyan-400 font-mono tracking-widest">KERFIÐ TILBÚIÐ - ÝTU Á BYRJA</span>
         </div>
       )}
     </div>

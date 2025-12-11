@@ -1,3 +1,4 @@
+
 export enum GameState {
   MENU = 'MENU',
   PLAYING = 'PLAYING',
@@ -26,9 +27,11 @@ export interface Character {
 }
 
 export enum Lane {
+  FAR_LEFT = -2,
   LEFT = -1,
   CENTER = 0,
   RIGHT = 1,
+  FAR_RIGHT = 2,
 }
 
 export enum ObstacleType {
@@ -38,12 +41,12 @@ export enum ObstacleType {
 }
 
 export interface Entity {
-  x: number; // Lane (-1, 0, 1) mostly, but can be float for animation
+  x: number; // Lane (-2, -1, 0, 1, 2)
   y: number; // Vertical height (0 is ground)
   z: number; // Depth
   width: number;
   height: number;
-  type: ObstacleType | 'COIN' | 'SPEED_BOOST' | 'PROJECTILE';
+  type: ObstacleType | 'PIZZA' | 'SPEED_BOOST' | 'PROJECTILE';
   subType?: string; // To distinguish projectile visuals (BLOOD, HANDCUFF, FIREBALL, etc)
   active: boolean;
 }

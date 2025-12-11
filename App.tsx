@@ -49,7 +49,7 @@ function App() {
                         onClick={startGame}
                         className="px-12 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xl font-bold rounded-full shadow-lg hover:scale-105 transition-transform animate-pulse"
                     >
-                        START RUN
+                        BYRJA
                     </button>
                  </div>
             )}

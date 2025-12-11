@@ -1,3 +1,4 @@
+
 import { Character, PowerUpType } from './types';
 
 export const CHARACTERS: Character[] = [
@@ -7,7 +8,7 @@ export const CHARACTERS: Character[] = [
     color: '#1e3a8a', // blue-900 (Police Blue)
     accentColor: '#60a5fa',
     powerUp: PowerUpType.DOUBLE_SCORE, 
-    description: 'Police Officer. Collect 10 Coins to reload Handcuffs. Ctrl to Shoot.',
+    description: 'Lögregluþjónn. Safnaðu 10 Pitsum til að hlaða Handjárn. Ctrl til að skjóta.',
   },
   {
     id: 'char_2',
@@ -15,7 +16,7 @@ export const CHARACTERS: Character[] = [
     color: '#b91c1c', // red-700
     accentColor: '#fca5a5',
     powerUp: PowerUpType.MAGNET,
-    description: 'Living Axe. Collect 10 Coins to reload Fireballs. Ctrl to Shoot.',
+    description: 'Lifandi Öxi. Safnaðu 10 Pitsum til að hlaða Eldkúlur. Ctrl til að skjóta.',
   },
   {
     id: 'char_3',
@@ -23,7 +24,7 @@ export const CHARACTERS: Character[] = [
     color: '#fca5a5', 
     accentColor: '#ef4444', 
     powerUp: PowerUpType.SUPER_JUMP,
-    description: 'Psychokinetic. Collect 10 Coins to reload Blood Blast. Ctrl to Shoot.',
+    description: 'Hugarorkusérfræðingur. Safnaðu 10 Pitsum til að hlaða Blóðsprengju. Ctrl til að skjóta.',
   },
   {
     id: 'char_4',
@@ -31,7 +32,7 @@ export const CHARACTERS: Character[] = [
     color: '#f59e0b', // amber-500
     accentColor: '#000000',
     powerUp: PowerUpType.SHIELD,
-    description: 'Sith Lord. Collect 10 Coins to reload Light Stars. Ctrl to Shoot.',
+    description: 'Sith Drottinn. Safnaðu 10 Pitsum til að hlaða Ljósstjörnur. Ctrl til að skjóta.',
   },
   {
     id: 'char_5',
@@ -39,7 +40,7 @@ export const CHARACTERS: Character[] = [
     color: '#78350f', // amber-900
     accentColor: '#d4d4d8',
     powerUp: PowerUpType.SLOW_TIME,
-    description: 'Chief. Collect 10 Coins to reload Neon Cats. Ctrl to Shoot.',
+    description: 'Lögreglustjóri. Safnaðu 10 Pitsum til að hlaða Neon Ketti. Ctrl til að skjóta.',
   },
   {
     id: 'char_6',
@@ -47,7 +48,7 @@ export const CHARACTERS: Character[] = [
     color: '#10b981', // emerald-500
     accentColor: '#34d399',
     powerUp: PowerUpType.FLOATY,
-    description: 'The Numbers. Collect 10 Coins to reload Number Bolts. Ctrl to Shoot.',
+    description: 'Tölustafirnir. Safnaðu 10 Pitsum til að hlaða Tölu-bolta. Ctrl til að skjóta.',
   },
   {
     id: 'char_7',
@@ -55,7 +56,7 @@ export const CHARACTERS: Character[] = [
     color: '#64748b', // slate-500
     accentColor: '#94a3b8',
     powerUp: PowerUpType.PHASE_SHIFT,
-    description: 'Ghost. Collect 10 Coins to reload Ecto-Blast. Ctrl to Shoot.',
+    description: 'Draugur. Safnaðu 10 Pitsum til að hlaða Ecto-sprengju. Ctrl til að skjóta.',
   },
   {
     id: 'char_8',
@@ -63,19 +64,83 @@ export const CHARACTERS: Character[] = [
     color: '#f472b6', // Pink-400
     accentColor: '#be185d', 
     powerUp: PowerUpType.NONE,
-    description: 'Pig with Bazooka. Collect 10 Coins to reload Rockets. Ctrl to Shoot.',
+    description: 'Svín með Bazooka. Safnaðu 10 Pitsum til að hlaða Eldflaugar. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_9',
+    name: 'Bragnaldo',
+    color: '#166534', // Green-700
+    accentColor: '#dc2626', // Red-600
+    powerUp: PowerUpType.NONE,
+    description: 'Fótboltastjarna. Safnaðu 10 Pitsum til að hlaða Fótbolta. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_10',
+    name: 'Cyclo',
+    color: '#475569', // Slate-600
+    accentColor: '#38bdf8', // Sky-400 (Water)
+    powerUp: PowerUpType.NONE,
+    description: 'Hálfur maður, hálft hjól. Safnaðu 10 Pitsum til að hlaða Vatnsflöskur. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_11',
+    name: 'Generic 3',
+    color: '#f97316', // Orange-500
+    accentColor: '#fb923c',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_12',
+    name: 'Generic 4',
+    color: '#a855f7', // Purple-500
+    accentColor: '#c084fc',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_13',
+    name: 'Generic 5',
+    color: '#84cc16', // Lime-500
+    accentColor: '#a3e635',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_14',
+    name: 'Generic 6',
+    color: '#f43f5e', // Rose-500
+    accentColor: '#fb7185',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_15',
+    name: 'Generic 7',
+    color: '#8b5cf6', // Violet-500
+    accentColor: '#a78bfa',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+  },
+  {
+    id: 'char_16',
+    name: 'Generic 8',
+    color: '#ec4899', // Pink-500
+    accentColor: '#f472b6',
+    powerUp: PowerUpType.NONE,
+    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
   },
 ];
 
 export const GAME_CONFIG = {
-  LANE_WIDTH: 2,
+  LANE_WIDTH: 2.0, // Reduced slightly to fit 5 lanes nicely
   GRAVITY: 0.1, 
   JUMP_FORCE: 1.5,
   SUPER_JUMP_FORCE: 2.2,
-  INITIAL_SPEED: 0.15,
-  MAX_SPEED: 1.5,
-  SPEED_INCREMENT: 0.00005, 
-  SPEED_BOOST_AMOUNT: 0.1, 
-  DRAW_DISTANCE: 60,
+  INITIAL_SPEED: 0.005, // Extremely slow start
+  MAX_SPEED: 0.05,      // Reduced cap
+  SPEED_INCREMENT: 0.000001, // Very slow acceleration
+  SPEED_BOOST_AMOUNT: 0.005, 
+  DRAW_DISTANCE: 80, // Further draw distance
   PLAYER_Z: 0, 
 };
