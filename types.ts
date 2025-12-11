@@ -55,4 +55,6 @@ export interface GameStats {
   score: number;
   coins: number;
   distance: number;
+  ammo?: number;
+  speed?: number;
 }

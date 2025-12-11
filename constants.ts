@@ -143,4 +143,5 @@ export const GAME_CONFIG = {
   SPEED_BOOST_AMOUNT: 0.005, 
   DRAW_DISTANCE: 80, // Further draw distance
   PLAYER_Z: 0, 
+  RAMPAGE_DURATION: 10000,
 };
