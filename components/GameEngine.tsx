@@ -2,15 +2,16 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Character, GameState, Lane, ObstacleType, PowerUpType, Entity } from '../types';
 import { GAME_CONFIG } from '../constants';
-import { Pause, Zap, Crosshair } from 'lucide-react';
+import { Pause, Zap, Crosshair, LogOut } from 'lucide-react';
 
 interface GameEngineProps {
   character: Character;
   onGameOver: (score: number, coins: number) => void;
+  onQuit: () => void;
   gameState: GameState;
 }
 
-const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameState }) => {
+const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onQuit, gameState }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // HUD State
@@ -742,14 +743,24 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, gameStat
           </div>
 
           <div className="flex flex-col items-end gap-4">
-              <button 
-                className="pointer-events-auto p-3 bg-slate-800/80 border border-slate-600 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.2)]"
-                onClick={() => setIsPaused(!isPaused)}
-              >
-                  <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300">
-                     <Pause size={20} />
-                  </div>
-              </button>
+              <div className="flex gap-3">
+                <button 
+                    className="pointer-events-auto p-3 bg-red-600/80 border border-red-400 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,0,0,0.2)]"
+                    onClick={onQuit}
+                >
+                    <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300">
+                        <LogOut size={20} />
+                    </div>
+                </button>
+                <button 
+                    className="pointer-events-auto p-3 bg-slate-800/80 border border-slate-600 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                    onClick={() => setIsPaused(!isPaused)}
+                >
+                    <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300">
+                        <Pause size={20} />
+                    </div>
+                </button>
+              </div>
               
               {/* Ammo Counter */}
               <div className={`

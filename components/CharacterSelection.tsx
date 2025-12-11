@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Character, PowerUpType } from '../types';
 import { CHARACTERS } from '../constants';
@@ -22,198 +23,358 @@ const PowerUpIcon = ({ type, className }: { type: PowerUpType, className?: strin
     }
 }
 
-// Custom SVG Portrait for Roberto
+// Custom SVG Portrait for Roberto (Police Officer)
 const RobertoPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        <circle cx="20" cy="45" r="10" fill="#3e2723" />
-        <circle cx="80" cy="45" r="10" fill="#3e2723" />
-        <circle cx="25" cy="30" r="10" fill="#3e2723" />
-        <circle cx="75" cy="30" r="10" fill="#3e2723" />
-        <circle cx="50" cy="20" r="12" fill="#3e2723" />
-        <circle cx="50" cy="55" r="30" fill="#dba188" />
-        <rect x="5" y="40" width="15" height="35" rx="4" fill="#64748b" />
-        <rect x="80" y="40" width="15" height="35" rx="4" fill="#64748b" />
-        <path d="M 12 42 Q 50 -10 88 42" stroke="#64748b" strokeWidth="6" fill="none" />
-        <path d="M 30 35 Q 50 30 70 35 L 70 40 L 30 40 Z" fill="#1e3a8a" />
-        <path d="M 25 35 Q 50 15 75 35" fill="#1e3a8a" />
-        <circle cx="50" cy="28" r="4" fill="#fbbf24" />
-        <circle cx="42" cy="55" r="3" fill="#1f2937" />
-        <circle cx="58" cy="55" r="3" fill="#1f2937" />
-        <path d="M 45 70 Q 50 75 55 70" stroke="#1f2937" strokeWidth="2" fill="none" />
-    </svg>
-);
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+        <defs>
+            <linearGradient id="copBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#1e3a8a" />
+                <stop offset="100%" stopColor="#0f172a" />
+            </linearGradient>
+            <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fca5a5" />
+                <stop offset="100%" stopColor="#f87171" />
+            </linearGradient>
+        </defs>
+        
+        {/* Background Aura */}
+        <circle cx="50" cy="50" r="45" fill="#e0f2fe" opacity="0.2" />
 
-// Custom SVG Portrait for Steve (Axe Person)
-const StevePortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        <rect x="42" y="50" width="16" height="50" rx="2" fill="#8d6e63" />
-        <line x1="42" y1="50" x2="42" y2="100" stroke="#5d4037" strokeWidth="2" />
-        <path d="M 50 10 L 85 15 Q 95 30 85 45 L 50 50 Z" fill="#9ca3af" stroke="#4b5563" strokeWidth="2" /> 
-        <path d="M 50 10 L 15 15 Q 5 30 15 45 L 50 50 Z" fill="#9ca3af" stroke="#4b5563" strokeWidth="2" />
-        <rect x="40" y="10" width="20" height="40" fill="#4b5563" rx="2" />
-        <circle cx="35" cy="30" r="4" fill="#fff" />
-        <circle cx="35" cy="30" r="1.5" fill="#000" />
-        <circle cx="65" cy="30" r="4" fill="#fff" />
-        <circle cx="65" cy="30" r="1.5" fill="#000" />
-        <path d="M 45 42 Q 50 45 55 42" stroke="#000" strokeWidth="2" fill="none" />
-        <line x1="28" y1="24" x2="40" y2="28" stroke="#000" strokeWidth="2" />
-        <line x1="72" y1="24" x2="60" y2="28" stroke="#000" strokeWidth="2" />
-    </svg>
-);
+        {/* Uniform Body */}
+        <path d="M 20 100 L 20 70 Q 50 60 80 70 L 80 100" fill="url(#copBlue)" />
+        <path d="M 40 70 L 50 100 L 60 70" fill="#cbd5e1" opacity="0.3" /> {/* Tie/Shirt detail */}
+        
+        {/* Badge */}
+        <path d="M 25 75 L 35 75 L 30 85 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="1" />
 
-// Custom SVG Portrait for El
-const ElPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        {/* Red Shirt */}
-        <path d="M 10 90 Q 50 110 90 90 L 90 60 Q 50 70 10 60 Z" fill="#ef4444" />
         {/* Head */}
-        <circle cx="50" cy="50" r="32" fill="#fca5a5" />
-        {/* Buzzcut */}
-        <path d="M 18 45 Q 50 10 82 45" fill="none" stroke="#5c4033" strokeWidth="2" strokeDasharray="2 2" />
-        <circle cx="50" cy="50" r="32" fill="none" stroke="#5c4033" strokeWidth="1" strokeDasharray="1 3" opacity="0.3" />
-        {/* Face */}
-        <circle cx="38" cy="50" r="3" fill="#1f2937" />
-        <circle cx="62" cy="50" r="3" fill="#1f2937" />
-        {/* Nose bleeding */}
-        <path d="M 48 55 L 52 55 L 50 58 Z" fill="#d1d5db" />
-        <path d="M 45 68 Q 50 72 55 68" stroke="#1f2937" strokeWidth="2" fill="none" />
-        {/* Blood Drip */}
-        <path d="M 46 60 L 46 65 Q 46 67 44 65" stroke="#991b1b" strokeWidth="2" fill="none" />
+        <rect x="35" y="40" width="30" height="35" rx="10" fill="url(#skin)" />
+        
+        {/* Curls (Hair) */}
+        <circle cx="35" cy="45" r="5" fill="#3f2c22" />
+        <circle cx="65" cy="45" r="5" fill="#3f2c22" />
+        <circle cx="33" cy="52" r="4" fill="#3f2c22" />
+        <circle cx="67" cy="52" r="4" fill="#3f2c22" />
+        
+        {/* Police Cap */}
+        <path d="M 25 35 Q 50 20 75 35 L 75 45 Q 50 35 25 45 Z" fill="#172554" />
+        <path d="M 25 45 Q 50 55 75 45" fill="#000" opacity="0.4" /> {/* Brim shadow */}
+        <rect x="46" y="28" width="8" height="8" fill="#fbbf24" rx="2" /> {/* Badge on hat */}
+        
+        {/* Sunglasses */}
+        <path d="M 38 52 Q 45 52 52 52 L 52 58 Q 45 62 38 58 Z" fill="#111" />
+        <path d="M 62 52 Q 55 52 48 52 L 48 58 Q 55 62 62 58 Z" fill="#111" />
+        <line x1="48" y1="54" x2="52" y2="54" stroke="#111" strokeWidth="2" />
+        
+        {/* Smile */}
+        <path d="M 45 68 Q 50 72 55 68" stroke="#7f1d1d" strokeWidth="2" fill="none" />
+    </svg>
+);
+
+// Custom SVG Portrait for Steve (Living Axe)
+const StevePortrait = () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+        <defs>
+            <linearGradient id="wood" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#a16207" />
+                <stop offset="100%" stopColor="#713f12" />
+            </linearGradient>
+            <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#e5e7eb" />
+                <stop offset="50%" stopColor="#9ca3af" />
+                <stop offset="100%" stopColor="#4b5563" />
+            </linearGradient>
+        </defs>
+
+        {/* Handle Body */}
+        <rect x="42" y="40" width="16" height="60" rx="4" fill="url(#wood)" stroke="#451a03" strokeWidth="1" />
+        
+        {/* Wood Texture */}
+        <path d="M 46 50 L 46 80" stroke="#78350f" strokeWidth="1" opacity="0.5" />
+        <path d="M 54 60 L 54 90" stroke="#78350f" strokeWidth="1" opacity="0.5" />
+
+        {/* Axe Head (Face) */}
+        <path d="M 42 15 L 42 45 L 85 45 Q 95 30 85 15 Z" fill="url(#metal)" stroke="#374151" strokeWidth="2" /> {/* Right Blade */}
+        <path d="M 42 15 L 42 45 L 15 45 Q 5 30 15 15 Z" fill="url(#metal)" stroke="#374151" strokeWidth="2" /> {/* Left Blade */}
+        
+        {/* Top Spike */}
+        <path d="M 42 15 L 50 5 L 58 15 Z" fill="#6b7280" />
+
+        {/* Face on Metal */}
+        <circle cx="30" cy="30" r="5" fill="#fff" stroke="#000" strokeWidth="1" />
+        <circle cx="30" cy="30" r="2" fill="#000" />
+        <circle cx="70" cy="30" r="5" fill="#fff" stroke="#000" strokeWidth="1" />
+        <circle cx="70" cy="30" r="2" fill="#000" />
+        
+        {/* Angry Eyebrows */}
+        <line x1="22" y1="24" x2="38" y2="28" stroke="#000" strokeWidth="2" />
+        <line x1="78" y1="24" x2="62" y2="28" stroke="#000" strokeWidth="2" />
+        
+        {/* Mouth */}
+        <rect x="45" y="35" width="10" height="4" rx="2" fill="#000" />
+    </svg>
+);
+
+// Custom SVG Portrait for El (11yo girl, buzzcut)
+const ElPortrait = () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+         <defs>
+            <radialGradient id="elSkin" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#fecaca" />
+                <stop offset="100%" stopColor="#f87171" />
+            </radialGradient>
+        </defs>
+
+        {/* Red Shirt */}
+        <path d="M 15 100 L 15 75 Q 50 85 85 75 L 85 100" fill="#dc2626" />
+        <path d="M 35 78 Q 50 90 65 78" stroke="#b91c1c" strokeWidth="2" fill="none" /> {/* Collar shadow */}
+
+        {/* Head */}
+        <ellipse cx="50" cy="50" rx="28" ry="32" fill="url(#elSkin)" />
+
+        {/* Buzzcut Hair Texture */}
+        <path d="M 22 40 Q 50 10 78 40" fill="#573a2e" opacity="0.8" />
+        <path d="M 22 40 Q 50 10 78 40" fill="none" stroke="#3e2418" strokeWidth="2" strokeDasharray="3 3" />
+
+        {/* Intense Eyes */}
+        <path d="M 35 48 Q 40 45 45 48" stroke="#374151" strokeWidth="1" fill="none" />
+        <circle cx="40" cy="52" r="3" fill="#1f2937" />
+        <path d="M 55 48 Q 60 45 65 48" stroke="#374151" strokeWidth="1" fill="none" />
+        <circle cx="60" cy="52" r="3" fill="#1f2937" />
+
+        {/* Nose Bleed */}
+        <path d="M 52 58 L 54 58 L 53 60 Z" fill="#ef4444" />
+        <path d="M 53 60 Q 54 65 52 70" stroke="#b91c1c" strokeWidth="2" fill="none" />
+        <circle cx="52" cy="72" r="1.5" fill="#b91c1c" />
+
+        {/* Mouth */}
+        <path d="M 45 70 Q 50 72 55 70" stroke="#7f1d1d" strokeWidth="1" fill="none" />
     </svg>
 );
 
 // Custom SVG Portrait for Lord Amber (Yellow Vader)
 const LordAmberPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        {/* Helmet Top */}
-        <path d="M 20 50 Q 50 0 80 50" fill="#fbbf24" stroke="#000" strokeWidth="2" />
-        <path d="M 15 50 L 85 50 L 90 80 L 10 80 Z" fill="#fbbf24" stroke="#000" strokeWidth="2" />
-        {/* Mask Face */}
-        <path d="M 25 50 L 75 50 L 70 90 L 30 90 Z" fill="#000" />
-        {/* Grill */}
-        <line x1="40" y1="75" x2="40" y2="88" stroke="#333" strokeWidth="2" />
-        <line x1="50" y1="75" x2="50" y2="88" stroke="#333" strokeWidth="2" />
-        <line x1="60" y1="75" x2="60" y2="88" stroke="#333" strokeWidth="2" />
-        {/* Eyes */}
-        <path d="M 32 60 Q 40 55 48 60 L 45 70 L 35 70 Z" fill="#333" />
-        <path d="M 52 60 Q 60 55 68 60 L 65 70 L 55 70 Z" fill="#333" />
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+         <defs>
+            <linearGradient id="goldHelm" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fcd34d" />
+                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#b45309" />
+            </linearGradient>
+        </defs>
+
+        {/* Helmet Dome */}
+        <path d="M 20 45 Q 50 -10 80 45" fill="url(#goldHelm)" stroke="#78350f" strokeWidth="1" />
+        <path d="M 15 45 L 85 45 L 90 70 L 10 70 Z" fill="url(#goldHelm)" stroke="#78350f" strokeWidth="1" />
+
+        {/* Face Mask */}
+        <path d="M 25 45 L 75 45 L 70 90 L 30 90 Z" fill="#171717" />
+
+        {/* Eyes (Visor) */}
+        <path d="M 30 55 L 45 60 L 35 65 Z" fill="#404040" />
+        <path d="M 70 55 L 55 60 L 65 65 Z" fill="#404040" />
+        
+        {/* Grill / Breather */}
+        <path d="M 40 75 L 60 75 L 58 90 L 42 90 Z" fill="#262626" stroke="#525252" strokeWidth="1" />
+        <line x1="45" y1="75" x2="45" y2="90" stroke="#525252" strokeWidth="1" />
+        <line x1="50" y1="75" x2="50" y2="90" stroke="#525252" strokeWidth="1" />
+        <line x1="55" y1="75" x2="55" y2="90" stroke="#525252" strokeWidth="1" />
+
+        {/* Shiny Highlight */}
+        <ellipse cx="35" cy="25" rx="5" ry="10" fill="#fff" opacity="0.3" transform="rotate(-30 35 25)" />
     </svg>
 );
 
-// Custom SVG Portrait for Hopper
+// Custom SVG Portrait for Hopper (Sheriff)
 const HopperPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        {/* Hat */}
-        <ellipse cx="50" cy="35" rx="40" ry="10" fill="#78350f" />
-        <path d="M 30 35 Q 50 10 70 35" fill="#78350f" />
-        <rect x="30" y="30" width="40" height="10" fill="#5D4037" />
-        {/* Head */}
-        <circle cx="50" cy="55" r="28" fill="#e5e5e5" />
-        <circle cx="50" cy="55" r="28" fill="#fca5a5" />
-        {/* Beard */}
-        <path d="M 25 55 Q 50 90 75 55 L 75 60 Q 50 100 25 60 Z" fill="#78350f" />
-        {/* Mustache */}
-        <path d="M 35 65 Q 50 60 65 65" stroke="#78350f" strokeWidth="6" fill="none" />
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+         <defs>
+            <linearGradient id="hat" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#a16207" />
+                <stop offset="100%" stopColor="#713f12" />
+            </linearGradient>
+        </defs>
+
+        {/* Hat Brim */}
+        <ellipse cx="50" cy="35" rx="42" ry="10" fill="#78350f" />
+        {/* Hat Top */}
+        <path d="M 28 35 L 32 15 Q 50 5 68 15 L 72 35 Z" fill="url(#hat)" />
+        <path d="M 30 30 Q 50 25 70 30" stroke="#451a03" strokeWidth="2" fill="none" opacity="0.5" />
+
         {/* Face */}
-        <circle cx="40" cy="50" r="3" fill="#1f2937" />
-        <circle cx="60" cy="50" r="3" fill="#1f2937" />
+        <rect x="30" y="35" width="40" height="40" rx="15" fill="#fecaca" />
+
+        {/* Beard */}
+        <path d="M 30 60 Q 30 85 50 85 Q 70 85 70 60 L 70 55 L 30 55 Z" fill="#78350f" />
+
+        {/* Mustache */}
+        <path d="M 35 60 Q 50 50 65 60" fill="none" stroke="#451a03" strokeWidth="5" strokeLinecap="round" />
+
+        {/* Eyes */}
+        <circle cx="40" cy="50" r="3" fill="#000" />
+        <circle cx="60" cy="50" r="3" fill="#000" />
+        
+        {/* Cigarette/Toothpick (optional detail) */}
+        <line x1="55" y1="65" x2="65" y2="68" stroke="#fff" strokeWidth="2" />
     </svg>
 );
 
-// Custom SVG Portrait for 6-7
+// Custom SVG Portrait for 6-7 (Numbers)
 const SixSevenPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90 bg-emerald-900 rounded-full">
-         <text x="30" y="70" fontSize="50" fontWeight="bold" fill="#34d399" fontFamily="monospace">6</text>
-         <text x="60" y="70" fontSize="50" fontWeight="bold" fill="#10b981" fontFamily="monospace">7</text>
-         <path d="M 20 80 Q 50 90 80 80" stroke="#fff" strokeWidth="2" fill="none"/>
+    <svg viewBox="0 0 100 100" className="w-full h-full bg-slate-900">
+         {/* Digital Grid Background */}
+         <path d="M 0 50 L 100 50 M 50 0 L 50 100" stroke="#10b981" strokeWidth="0.5" opacity="0.2" />
+         
+         {/* Number 6 */}
+         <text x="25" y="70" fontSize="60" fontWeight="900" fill="#34d399" fontFamily="monospace" stroke="#064e3b" strokeWidth="2" filter="drop-shadow(0 0 5px #34d399)">6</text>
+         
+         {/* Number 7 (Interlocking) */}
+         <text x="55" y="70" fontSize="60" fontWeight="900" fill="#10b981" fontFamily="monospace" stroke="#064e3b" strokeWidth="2" filter="drop-shadow(0 0 5px #10b981)">7</text>
+         
+         {/* Connection Circuit */}
+         <path d="M 40 40 L 60 40" stroke="#ecfdf5" strokeWidth="2" strokeDasharray="4 2" />
+         <circle cx="40" cy="40" r="3" fill="#fff" />
+         <circle cx="60" cy="40" r="3" fill="#fff" />
     </svg>
 );
 
 // Custom SVG Portrait for Specter (Ghost)
 const SpecterPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        <path d="M 20 90 L 20 50 Q 50 0 80 50 L 80 90 L 70 80 L 60 90 L 50 80 L 40 90 L 30 80 Z" fill="#cbd5e1" opacity="0.8" />
-        <circle cx="35" cy="45" r="5" fill="#0f172a" />
-        <circle cx="65" cy="45" r="5" fill="#0f172a" />
-        <ellipse cx="50" cy="60" rx="8" ry="12" fill="#0f172a" />
-        <path d="M 20 60 Q 10 50 10 40" stroke="#cbd5e1" strokeWidth="3" fill="none" />
-        <path d="M 80 60 Q 90 50 90 40" stroke="#cbd5e1" strokeWidth="3" fill="none" />
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+         <defs>
+             <radialGradient id="ghostGlow" cx="50%" cy="50%" r="50%">
+                 <stop offset="0%" stopColor="#e2e8f0" stopOpacity="1" />
+                 <stop offset="80%" stopColor="#94a3b8" stopOpacity="0.8" />
+                 <stop offset="100%" stopColor="#64748b" stopOpacity="0" />
+             </radialGradient>
+         </defs>
+
+        {/* Ghost Body */}
+        <path d="M 20 90 L 20 50 Q 50 0 80 50 L 80 90 Q 70 80 60 90 Q 50 80 40 90 Q 30 80 20 90" fill="url(#ghostGlow)" filter="drop-shadow(0 0 8px #cbd5e1)" />
+        
+        {/* Hollow Eyes */}
+        <ellipse cx="35" cy="45" rx="6" ry="8" fill="#0f172a" />
+        <ellipse cx="65" cy="45" rx="6" ry="8" fill="#0f172a" />
+        
+        {/* Glowing Pupils */}
+        <circle cx="35" cy="45" r="2" fill="#38bdf8" opacity="0.8" />
+        <circle cx="65" cy="45" r="2" fill="#38bdf8" opacity="0.8" />
+
+        {/* Wailing Mouth */}
+        <ellipse cx="50" cy="65" rx="8" ry="12" fill="#0f172a" />
+        
+        {/* Ectoplasm drips */}
+        <circle cx="30" cy="80" r="3" fill="#e2e8f0" opacity="0.6" />
+        <circle cx="70" cy="75" r="2" fill="#e2e8f0" opacity="0.6" />
     </svg>
 );
 
 // Custom SVG Portrait for Shotgun-Bomb (Pig with Bazooka)
 const ShotgunBombPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-        {/* Bazooka (Behind) */}
-        <rect x="60" y="20" width="20" height="60" fill="#374151" rx="2" transform="rotate(30 70 50)" />
-        <path d="M 70 20 L 80 15 L 90 25 L 80 30 Z" fill="#ef4444" transform="rotate(30 70 50)" />
-        
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+        <defs>
+            <linearGradient id="pigSkin" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fbcfe8" />
+                <stop offset="100%" stopColor="#f472b6" />
+            </linearGradient>
+        </defs>
+
         {/* Pig Head */}
-        <circle cx="50" cy="50" r="32" fill="#f472b6" />
-        
+        <circle cx="50" cy="55" r="30" fill="url(#pigSkin)" />
+
         {/* Ears */}
-        <path d="M 25 25 L 35 40 L 25 50 Z" fill="#f472b6" />
-        <path d="M 75 25 L 65 40 L 75 50 Z" fill="#f472b6" />
-        
+        <path d="M 25 30 L 35 45 L 20 50 Z" fill="#f472b6" />
+        <path d="M 75 30 L 65 45 L 80 50 Z" fill="#f472b6" />
+
+        {/* Army Bandana */}
+        <path d="M 20 35 Q 50 25 80 35 L 80 45 Q 50 35 20 45 Z" fill="#14532d" />
+        <circle cx="50" cy="38" r="4" fill="#ef4444" /> {/* Sun symbol */}
+
         {/* Snout */}
-        <ellipse cx="50" cy="58" rx="10" ry="8" fill="#fbcfe8" />
-        <circle cx="47" cy="58" r="2.5" fill="#be185d" />
-        <circle cx="53" cy="58" r="2.5" fill="#be185d" />
-        
+        <ellipse cx="50" cy="65" rx="12" ry="9" fill="#f9a8d4" stroke="#db2777" strokeWidth="1" />
+        <circle cx="46" cy="65" r="3" fill="#831843" />
+        <circle cx="54" cy="65" r="3" fill="#831843" />
+
         {/* Eyes */}
-        <circle cx="40" cy="45" r="4" fill="#000" />
-        <circle cx="60" cy="45" r="4" fill="#000" />
-        
-        {/* Headband / Warpaint */}
-        <rect x="25" y="30" width="50" height="6" fill="#155e75" />
+        <circle cx="40" cy="50" r="4" fill="#000" />
+        <circle cx="60" cy="50" r="4" fill="#000" />
+        <path d="M 35 45 L 45 48" stroke="#000" strokeWidth="2" /> {/* Angry brows */}
+        <path d="M 65 45 L 55 48" stroke="#000" strokeWidth="2" />
+
+        {/* Bazooka Barrel peaking out */}
+        <rect x="70" y="55" width="30" height="15" fill="#374151" transform="rotate(-15 70 55)" />
+        <rect x="90" y="50" width="5" height="25" fill="#1f2937" transform="rotate(-15 90 50)" />
     </svg>
 );
 
 // Custom SVG Portrait for Bragnaldo (Soccer Star)
 const BragnaldoPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
+    <svg viewBox="0 0 100 100" className="w-full h-full">
         {/* Green Jersey */}
-        <path d="M 20 100 L 20 60 Q 50 50 80 60 L 80 100" fill="#166534" />
-        <rect x="40" y="60" width="20" height="40" fill="#dc2626" opacity="0.8" />
-        
-        {/* Head */}
-        <circle cx="50" cy="45" r="28" fill="#fcd34d" /> {/* Blond hair base */}
-        <circle cx="50" cy="45" r="22" fill="#fca5a5" /> {/* Face */}
+        <path d="M 15 100 L 15 70 Q 50 60 85 70 L 85 100" fill="#15803d" />
+        <rect x="45" y="70" width="10" height="30" fill="#b91c1c" /> {/* Red Stripe */}
+        <path d="M 40 70 L 60 70" stroke="#fff" strokeWidth="1" /> {/* Collar */}
 
-        {/* Curly Hair Detail */}
-        <circle cx="30" cy="35" r="8" fill="#fcd34d" />
-        <circle cx="70" cy="35" r="8" fill="#fcd34d" />
-        <circle cx="50" cy="20" r="10" fill="#fcd34d" />
+        {/* Neck */}
+        <rect x="40" y="55" width="20" height="15" fill="#fca5a5" />
+
+        {/* Head */}
+        <ellipse cx="50" cy="45" rx="25" ry="30" fill="#fca5a5" />
+
+        {/* Blonde Curls */}
+        <circle cx="50" cy="15" r="10" fill="#fcd34d" />
+        <circle cx="35" cy="20" r="10" fill="#fcd34d" />
+        <circle cx="65" cy="20" r="10" fill="#fcd34d" />
+        <circle cx="25" cy="35" r="8" fill="#fcd34d" />
+        <circle cx="75" cy="35" r="8" fill="#fcd34d" />
         <circle cx="25" cy="50" r="6" fill="#fcd34d" />
         <circle cx="75" cy="50" r="6" fill="#fcd34d" />
 
-        {/* Face Features */}
-        <circle cx="42" cy="45" r="3" fill="#1f2937" />
-        <circle cx="58" cy="45" r="3" fill="#1f2937" />
-        <path d="M 45 60 Q 50 65 55 60" stroke="#1f2937" strokeWidth="2" fill="none" />
+        {/* Face */}
+        <circle cx="40" cy="45" r="3" fill="#1f2937" />
+        <circle cx="60" cy="45" r="3" fill="#1f2937" />
+        <path d="M 40 60 Q 50 65 60 60" stroke="#be123c" strokeWidth="2" fill="none" /> {/* Smile */}
+        
+        {/* Soccer Ball (Small icon) */}
+        <circle cx="80" cy="80" r="12" fill="#fff" stroke="#000" strokeWidth="1" />
+        <path d="M 80 80 L 80 72 M 80 80 L 87 84 M 80 80 L 73 84" stroke="#000" strokeWidth="1" />
+        <path d="M 73 84 L 75 90 L 85 90 L 87 84" fill="none" stroke="#000" strokeWidth="1" />
     </svg>
 );
 
 // Custom SVG Portrait for Cyclo (Half Man Half Motorcycle)
 const CycloPortrait = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full transform scale-90">
-         {/* Motorcycle Body */}
-         <rect x="25" y="55" width="50" height="25" fill="#334155" rx="5" />
-         <circle cx="20" cy="75" r="15" fill="#0f172a" stroke="#cbd5e1" strokeWidth="4" />
-         <circle cx="80" cy="75" r="15" fill="#0f172a" stroke="#cbd5e1" strokeWidth="4" />
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+         <defs>
+             <linearGradient id="chrome" x1="0%" y1="0%" x2="100%" y2="100%">
+                 <stop offset="0%" stopColor="#e2e8f0" />
+                 <stop offset="50%" stopColor="#94a3b8" />
+                 <stop offset="100%" stopColor="#475569" />
+             </linearGradient>
+         </defs>
+
+         {/* Mechanical Body */}
+         <path d="M 20 60 L 80 60 L 90 80 L 10 80 Z" fill="#334155" />
+         <rect x="30" y="60" width="40" height="20" fill="#1e293b" />
          
-         {/* Man Torso (Merging) */}
-         <path d="M 35 55 L 35 30 Q 50 20 65 30 L 65 55 Z" fill="#475569" />
+         {/* Wheels */}
+         <circle cx="20" cy="80" r="12" fill="#0f172a" stroke="url(#chrome)" strokeWidth="4" />
+         <circle cx="80" cy="80" r="12" fill="#0f172a" stroke="url(#chrome)" strokeWidth="4" />
+         <circle cx="20" cy="80" r="4" fill="#94a3b8" />
+         <circle cx="80" cy="80" r="4" fill="#94a3b8" />
+
+         {/* Rider Torso */}
+         <path d="M 35 60 L 65 60 L 60 30 L 40 30 Z" fill="#475569" />
+         <rect x="40" y="35" width="20" height="25" fill="#0f172a" rx="5" /> {/* Jacket */}
          
-         {/* Head */}
-         <circle cx="50" cy="20" r="12" fill="#fca5a5" />
-         {/* Helmet/Goggles */}
-         <path d="M 38 18 L 62 18 L 60 25 L 40 25 Z" fill="#38bdf8" opacity="0.8" />
-         <path d="M 35 15 Q 50 5 65 15" stroke="#000" strokeWidth="2" fill="none"/>
+         {/* Helmet Head */}
+         <circle cx="50" cy="25" r="14" fill="#fca5a5" /> {/* Skin under helmet? */}
+         <path d="M 35 15 Q 50 5 65 15 L 65 30 Q 50 35 35 30 Z" fill="#0284c7" /> {/* Helmet */}
+         <path d="M 38 18 L 62 18 L 60 26 L 40 26 Z" fill="#38bdf8" /> {/* Visor */}
          
          {/* Handlebars */}
-         <path d="M 30 40 L 10 35" stroke="#94a3b8" strokeWidth="3" />
-         <path d="M 70 40 L 90 35" stroke="#94a3b8" strokeWidth="3" />
+         <path d="M 25 45 L 40 40" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
+         <path d="M 75 45 L 60 40" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
     </svg>
 );
 

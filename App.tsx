@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import CharacterSelection from './components/CharacterSelection';
 import GameEngine from './components/GameEngine';
@@ -60,6 +61,7 @@ function App() {
         <GameEngine 
             character={selectedCharacter} 
             onGameOver={handleGameOver} 
+            onQuit={returnToMenu}
             gameState={gameState}
         />
       )}
