@@ -133,15 +133,15 @@ export const CHARACTERS: Character[] = [
 ];
 
 export const GAME_CONFIG = {
-  LANE_WIDTH: 2.0, // Reduced slightly to fit 5 lanes nicely
-  GRAVITY: 0.1, 
-  JUMP_FORCE: 1.5,
-  SUPER_JUMP_FORCE: 2.2,
-  INITIAL_SPEED: 0.005, // Extremely slow start
-  MAX_SPEED: 0.05,      // Reduced cap
-  SPEED_INCREMENT: 0.000001, // Very slow acceleration
+  LANE_WIDTH: 2.0, 
+  GRAVITY: 0.04, // Even lower for extra floaty
+  JUMP_FORCE: 0.9, // Balanced with low gravity
+  SUPER_JUMP_FORCE: 1.4,
+  INITIAL_SPEED: 0.005, 
+  MAX_SPEED: 0.05,     
+  SPEED_INCREMENT: 0.000001, 
   SPEED_BOOST_AMOUNT: 0.005, 
-  DRAW_DISTANCE: 80, // Further draw distance
+  DRAW_DISTANCE: 150, 
   PLAYER_Z: 0, 
   RAMPAGE_DURATION: 10000,
 };

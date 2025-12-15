@@ -1,15 +1,19 @@
-
 import React, { useState } from 'react';
 import CharacterSelection from './components/CharacterSelection';
 import GameEngine from './components/GameEngine';
 import GameOver from './components/GameOver';
-import { GameState, Character } from './types';
+import CannonMinigame from './components/CannonMinigame';
+import { GameState, Character, GameStats } from './types';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>(GameState.MENU);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [finalCoins, setFinalCoins] = useState(0);
+  
+  // State to hold stats between game and minigame
+  const [currentStats, setCurrentStats] = useState<GameStats | undefined>(undefined);
+  const [startWithRampage, setStartWithRampage] = useState(false);
 
   const handleCharacterSelect = (char: Character) => {
     setSelectedCharacter(char);
@@ -17,6 +21,8 @@ function App() {
 
   const startGame = () => {
       if (selectedCharacter) {
+          setCurrentStats(undefined);
+          setStartWithRampage(false);
           setGameState(GameState.PLAYING);
       }
   };
@@ -27,13 +33,26 @@ function App() {
     setGameState(GameState.GAME_OVER);
   };
 
+  const handleMinigameTrigger = (stats: GameStats) => {
+      setCurrentStats(stats);
+      setGameState(GameState.MINIGAME);
+  };
+
+  const handleMinigameComplete = (success: boolean) => {
+      setStartWithRampage(success);
+      setGameState(GameState.PLAYING);
+  };
+
   const restartGame = () => {
+    setCurrentStats(undefined);
+    setStartWithRampage(false);
     setGameState(GameState.PLAYING);
   };
 
   const returnToMenu = () => {
     setGameState(GameState.MENU);
     setSelectedCharacter(null);
+    setCurrentStats(undefined);
   };
 
   return (
@@ -61,9 +80,16 @@ function App() {
         <GameEngine 
             character={selectedCharacter} 
             onGameOver={handleGameOver} 
+            onMinigameTrigger={handleMinigameTrigger}
             onQuit={returnToMenu}
             gameState={gameState}
+            initialStats={currentStats}
+            startWithRampage={startWithRampage}
         />
+      )}
+      
+      {gameState === GameState.MINIGAME && (
+          <CannonMinigame onComplete={handleMinigameComplete} />
       )}
 
       {gameState === GameState.GAME_OVER && (

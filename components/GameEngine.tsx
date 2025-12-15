@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Character, GameState, Lane, ObstacleType, PowerUpType, Entity, GameStats } from '../types';
 import { GAME_CONFIG } from '../constants';
-import { Pause, Zap, Crosshair, Flame, LogOut } from 'lucide-react';
+import { Pause, Zap, Crosshair, Flame, LogOut, Code } from 'lucide-react';
 import { CHARACTER_SVGS } from './CharacterAssets';
 
 interface GameEngineProps {
@@ -21,7 +21,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
   // HUD State
   const [hudScore, setHudScore] = useState(initialStats?.score || 0);
   const [hudCoins, setHudCoins] = useState(initialStats?.coins || 0);
-  const [hudAmmo, setHudAmmo] = useState(initialStats?.ammo || 0);
+  // Change default ammo to 3, but respect 0 if passed from minigame (using ?? instead of ||)
+  const [hudAmmo, setHudAmmo] = useState(initialStats?.ammo ?? 3);
   const [isPaused, setIsPaused] = useState(false);
   const [showSpeedBoost, setShowSpeedBoost] = useState(false);
   const [showAmmoReload, setShowAmmoReload] = useState(false);
@@ -47,14 +48,20 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
     invincible: character.powerUp === PowerUpType.SHIELD,
     magnetTimer: 0,
     lastProjectileTime: 0,
-    ammo: initialStats?.ammo || 0,
+    // Change default ammo to 3 here as well
+    ammo: initialStats?.ammo ?? 3,
     rampageTimer: startWithRampage ? GAME_CONFIG.RAMPAGE_DURATION : 0,
   });
   
   const entitiesRef = useRef<Entity[]>([]);
   const requestRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
-  const minigameTriggeredRef = useRef(false);
+  
+  // Prevent immediate re-trigger if we resume with 10 coins
+  const minigameTriggeredRef = useRef(initialStats ? true : false);
+  
+  // Helper ref to avoid stale closure issues in loop for state updates
+  const lastRampageSecondRef = useRef(0);
   
   // Image Asset for Player
   const playerImageRef = useRef<HTMLImageElement | null>(null);
@@ -78,13 +85,10 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
         if (!initialStats) {
             resetGame();
         } else {
+            // Resume Game logic
+            minigameTriggeredRef.current = false;
             lastTimeRef.current = performance.now();
             requestRef.current = requestAnimationFrame(gameLoop);
-        }
-        
-        if (!initialStats) {
-             lastTimeRef.current = performance.now();
-             requestRef.current = requestAnimationFrame(gameLoop);
         }
     }
     return () => {
@@ -105,16 +109,28 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
       invincible: character.powerUp === PowerUpType.SHIELD,
       magnetTimer: 0,
       lastProjectileTime: 0,
-      ammo: 0,
+      ammo: 3, // Start with 3 ammo
       rampageTimer: 0
     };
     entitiesRef.current = [];
     setHudScore(0);
     setHudCoins(0);
-    setHudAmmo(0);
+    setHudAmmo(3); // Reset HUD to 3 ammo
     setRampageTime(0);
+    lastRampageSecondRef.current = 0;
     setIsPaused(false);
     minigameTriggeredRef.current = false;
+    
+    lastTimeRef.current = performance.now();
+    requestRef.current = requestAnimationFrame(gameLoop);
+  };
+
+  const handleDevMinigame = () => {
+      // Trigger minigame immediately for testing
+      onMinigameTrigger({
+         ...statsRef.current,
+         ammo: playerRef.current.ammo
+      });
   };
 
   const fireProjectile = (subType: string) => {
@@ -154,6 +170,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
       case 'w':
       case ' ':
         if (player.y === 0) {
+          // Uniform levitation/jump logic for all characters
           player.vy = character.powerUp === PowerUpType.SUPER_JUMP 
             ? GAME_CONFIG.SUPER_JUMP_FORCE 
             : GAME_CONFIG.JUMP_FORCE;
@@ -163,7 +180,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
       case 'ArrowDown':
       case 's':
         if (player.y > 0) {
-           player.vy = -GAME_CONFIG.JUMP_FORCE;
+           player.vy = -GAME_CONFIG.JUMP_FORCE; // Fast drop
         } else {
             player.state = 'ROLLING';
             setTimeout(() => { 
@@ -242,9 +259,16 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
 
       if (player.rampageTimer > 0) {
           player.rampageTimer -= deltaTime;
-          setRampageTime(Math.ceil(player.rampageTimer / 1000));
+          const currentSec = Math.ceil(player.rampageTimer / 1000);
+          if (currentSec !== lastRampageSecondRef.current) {
+               lastRampageSecondRef.current = currentSec;
+               setRampageTime(currentSec);
+          }
       } else {
-          setRampageTime(0);
+          if (lastRampageSecondRef.current !== 0) {
+              lastRampageSecondRef.current = 0;
+              setRampageTime(0);
+          }
       }
 
       if (stats.speed < GAME_CONFIG.MAX_SPEED) {
@@ -257,9 +281,12 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
 
       player.x += (player.targetX - player.x) * 0.2;
       
+      // Physics Update
       if (player.y > 0 || player.vy > 0) {
           player.y += player.vy;
+          // Use global constant for "levitating" feel
           player.vy -= GAME_CONFIG.GRAVITY;
+          
           if (player.y < 0) {
               player.y = 0;
               player.vy = 0;
@@ -312,13 +339,27 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
               
               for (let j = 0; j < entitiesRef.current.length; j++) {
                   const target = entitiesRef.current[j];
-                  if (!target.active || target === entity || target.type === 'PROJECTILE' || target.type === 'PIZZA' || target.type === 'SPEED_BOOST') continue;
+                  if (!target.active || target === entity || target.type === 'PROJECTILE' || target.type === 'SPEED_BOOST') continue;
                   
                   if (Math.abs(entity.x - target.x) < 1 && Math.abs(entity.z - target.z) < 2) {
-                      target.active = false; 
-                      entity.active = false; 
-                      stats.score += 50; 
-                      break;
+                      if (target.type === 'PIZZA') {
+                          target.active = false;
+                          stats.coins += 1;
+                          setHudCoins(stats.coins);
+                          
+                          // Ammo reload logic for projectile collection
+                          if (stats.coins % 10 === 0 && stats.coins > 0) {
+                               player.ammo += 3;
+                               setHudAmmo(player.ammo);
+                               setShowAmmoReload(true);
+                               setTimeout(() => setShowAmmoReload(false), 2000);
+                          }
+                      } else {
+                          // Destroy Obstacles
+                          target.active = false; 
+                          stats.score += 50; 
+                          // NOTE: We do NOT set entity.active = false here, so it penetrates.
+                      }
                   }
               }
 
@@ -465,18 +506,19 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
       for (let i = -3; i <= 3; i++) {
           const laneBoundary = (i + 0.5) * GAME_CONFIG.LANE_WIDTH;
           const pNear = project(laneBoundary, 0, 0, width, height);
-          const pFar = project(laneBoundary, 0, 100, width, height);
+          const pFar = project(laneBoundary, 0, GAME_CONFIG.DRAW_DISTANCE, width, height);
           ctx.beginPath(); ctx.moveTo(pNear.x, pNear.y); ctx.lineTo(pFar.x, pFar.y); ctx.stroke();
       }
 
       const phase = (statsRef.current.distance * 10) % 20;
-      for (let z = 0; z < 20; z++) {
+      // Increased z loop limit to cover larger draw distance (40 * 5 = 200 > 150)
+      for (let z = 0; z < 40; z++) {
           const worldZ = (z * 5) - phase;
           if (worldZ < -2) continue;
           const edge = 2.5 * GAME_CONFIG.LANE_WIDTH;
           const pLeft = project(-edge, 0, worldZ, width, height);
           const pRight = project(edge, 0, worldZ, width, height);
-          const alpha = Math.max(0, 1 - (worldZ / 80));
+          const alpha = Math.max(0, 1 - (worldZ / GAME_CONFIG.DRAW_DISTANCE));
           ctx.globalAlpha = alpha;
           ctx.beginPath(); ctx.moveTo(pLeft.x, pLeft.y); ctx.lineTo(pRight.x, pRight.y); ctx.stroke();
       }
@@ -546,20 +588,97 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
               ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - size, size/2, 0, Math.PI*2); ctx.fill();
           }
       } else if (entity.type === ObstacleType.TRAIN) {
-          ctx.shadowColor = '#dc2626'; ctx.shadowBlur = 20;
-          ctx.fillStyle = '#991b1b'; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
-          ctx.fillRect(x - width/2, y - height, width, height); ctx.strokeRect(x - width/2, y - height, width, height);
-          ctx.shadowColor = '#fcd34d'; ctx.fillStyle = '#fcd34d'; ctx.fillRect(x - width/3, y - height + (height*0.2), width/1.5, height/3);
+          // Improved TRAIN graphics
+          // Body
+          ctx.shadowColor = '#000'; ctx.shadowBlur = 10;
+          const gradient = ctx.createLinearGradient(x - width/2, y - height, x + width/2, y);
+          gradient.addColorStop(0, '#334155');
+          gradient.addColorStop(0.5, '#475569');
+          gradient.addColorStop(1, '#1e293b');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x - width/2, y - height, width, height);
+          
+          // Border
+          ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+          ctx.strokeRect(x - width/2, y - height, width, height);
+
+          // Windshield
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(x - width * 0.4, y - height * 0.8, width * 0.8, height * 0.4);
+          
+          // Lights
+          ctx.shadowColor = '#facc15'; ctx.shadowBlur = 20;
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath(); ctx.arc(x - width * 0.25, y - height * 0.2, width * 0.1, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x + width * 0.25, y - height * 0.2, width * 0.1, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Grill / Stripes
+          ctx.fillStyle = '#000';
+          for(let i=0; i<3; i++) {
+              ctx.fillRect(x - width * 0.2, y - height * 0.35 + (i * height * 0.05), width * 0.4, height * 0.02);
+          }
+
       } else if (entity.type === ObstacleType.HIGH_BARRIER) {
-          ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 15;
-          ctx.fillStyle = 'rgba(239, 68, 68, 0.2)'; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
-          ctx.strokeRect(x - width/2, y - height, width, height/3);
-          ctx.fillRect(x - width/2, y - height, width/8, height); ctx.fillRect(x + width/2 - width/8, y - height, width/8, height);
+          // Improved HIGH_BARRIER (Gantry/Billboard)
+          ctx.shadowColor = '#000'; ctx.shadowBlur = 5;
+          
+          // Poles
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(x - width/2, y - height, width * 0.1, height); // Left pole
+          ctx.fillRect(x + width/2 - width * 0.1, y - height, width * 0.1, height); // Right pole
+          
+          // Sign Board
+          ctx.fillStyle = '#1e1b4b';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.fillRect(x - width/2, y - height, width, height * 0.4);
+          ctx.strokeRect(x - width/2, y - height, width, height * 0.4);
+          
+          // Neon Text Effect
+          ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 10;
+          ctx.fillStyle = '#ef4444';
+          ctx.font = `bold ${height * 0.2}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText("DANGER", x, y - height * 0.7);
+          ctx.shadowBlur = 0;
+
       } else {
-          ctx.shadowColor = '#dc2626'; ctx.shadowBlur = 15;
-          ctx.fillStyle = 'rgba(220, 38, 38, 0.4)'; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
-          ctx.fillRect(x - width/2, y - height/2, width, height/2); ctx.strokeRect(x - width/2, y - height/2, width, height/2);
-          ctx.beginPath(); ctx.moveTo(x - width/4, y); ctx.lineTo(x, y - height/2); ctx.stroke();
+          // Improved LOW_BARRIER (Concrete Barrier)
+          ctx.shadowColor = '#000'; ctx.shadowBlur = 10;
+          
+          // Concrete Base
+          ctx.fillStyle = '#94a3b8'; // Slate 400
+          ctx.beginPath();
+          ctx.moveTo(x - width/2, y);
+          ctx.lineTo(x - width/2 + width*0.1, y - height);
+          ctx.lineTo(x + width/2 - width*0.1, y - height);
+          ctx.lineTo(x + width/2, y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Stripes
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = '#facc15'; // Yellow
+          ctx.beginPath();
+          for(let i = -width; i < width; i+= width*0.4) {
+             ctx.moveTo(x + i, y);
+             ctx.lineTo(x + i + width*0.2, y - height);
+             ctx.lineTo(x + i + width*0.3, y - height);
+             ctx.lineTo(x + i + width*0.1, y);
+             ctx.closePath();
+          }
+          ctx.fill();
+          ctx.restore();
+          
+          // Top Line
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x - width/2 + width*0.1, y - height);
+          ctx.lineTo(x + width/2 - width*0.1, y - height);
+          ctx.stroke();
       }
       ctx.restore();
   };
@@ -638,23 +757,30 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-4">
+          <div className="flex flex-col items-end gap-4 pointer-events-auto">
               <div className="flex gap-3">
+                 <button 
+                    className="p-3 bg-purple-600/80 border border-purple-400 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                    onClick={handleDevMinigame}
+                    title="DEV: Trigger Minigame"
+                >
+                    <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300"><Code size={20} /></div>
+                </button>
                 <button 
-                    className="pointer-events-auto p-3 bg-red-600/80 border border-red-400 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,0,0,0.2)]"
+                    className="p-3 bg-red-600/80 border border-red-400 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,0,0,0.2)]"
                     onClick={onQuit}
                 >
                     <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300"><LogOut size={20} /></div>
                 </button>
                 <button 
-                    className="pointer-events-auto p-3 bg-slate-800/80 border border-slate-600 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                    className="p-3 bg-slate-800/80 border border-slate-600 hover:border-white text-white rounded-none transform rotate-45 hover:rotate-0 transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.2)]"
                     onClick={() => setIsPaused(!isPaused)}
                 >
                     <div className="transform -rotate-45 hover:rotate-0 transition-all duration-300"><Pause size={20} /></div>
                 </button>
               </div>
               
-              <div className={`transition-all duration-300 px-6 py-3 border-r-4 transform skew-x-[12deg] backdrop-blur-md ${hudAmmo > 0 ? 'bg-green-900/60 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.5)]' : 'bg-slate-900/60 border-slate-600 opacity-80'}`}>
+              <div className={`pointer-events-none transition-all duration-300 px-6 py-3 border-r-4 transform skew-x-[12deg] backdrop-blur-md ${hudAmmo > 0 ? 'bg-green-900/60 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.5)]' : 'bg-slate-900/60 border-slate-600 opacity-80'}`}>
                   <div className="transform skew-x-[-12deg] flex items-center gap-3">
                       <Crosshair size={24} className={hudAmmo > 0 ? 'text-green-400 animate-pulse' : 'text-slate-500'} />
                       <div className="flex flex-col items-end">
@@ -695,7 +821,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ character, onGameOver, onMiniga
           )}
       </div>
       
-      <div className="absolute bottom-6 w-full text-center">
+      <div className="absolute top-32 w-full text-center pointer-events-none">
          <div className="inline-block bg-black/60 backdrop-blur-sm px-8 py-2 border border-white/10 skew-x-[-20deg]">
              <div className="skew-x-[20deg] text-cyan-500 text-[10px] font-bold tracking-widest">
                  ARROWS: MOVE • SPACE: JUMP • CTRL: SHOOT
