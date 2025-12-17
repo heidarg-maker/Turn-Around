@@ -124,24 +124,25 @@ export const CHARACTERS: Character[] = [
   },
   {
     id: 'char_16',
-    name: 'Generic 8',
-    color: '#ec4899', // Pink-500
-    accentColor: '#f472b6',
-    powerUp: PowerUpType.NONE,
-    description: 'Venjulegur. Safnaðu 10 Pitsum til að hlaða. Ctrl til að skjóta.',
+    name: 'Dori-Dinjo',
+    color: '#0ea5e9', // Sky-500
+    accentColor: '#38bdf8',
+    powerUp: PowerUpType.DOUBLE_COINS,
+    description: 'Spæjari með stíl. Safnaðu 10 Pitsum til að hlaða Yfirvaraskegg. Ctrl til að skjóta.',
   },
 ];
 
 export const GAME_CONFIG = {
   LANE_WIDTH: 2.0, 
-  GRAVITY: 0.04, // Even lower for extra floaty
-  JUMP_FORCE: 0.9, // Balanced with low gravity
+  GRAVITY: 0.04, 
+  JUMP_FORCE: 0.9, 
   SUPER_JUMP_FORCE: 1.4,
-  INITIAL_SPEED: 0.005, 
-  MAX_SPEED: 0.05,     
-  SPEED_INCREMENT: 0.000001, 
+  INITIAL_SPEED: 0.096, 
+  MAX_SPEED: 0.25,     
+  SPEED_INCREMENT: 0.000003, 
   SPEED_BOOST_AMOUNT: 0.005, 
   DRAW_DISTANCE: 150, 
   PLAYER_Z: 0, 
   RAMPAGE_DURATION: 10000,
+  MAX_HEALTH: 5,
 };

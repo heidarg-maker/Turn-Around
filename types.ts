@@ -6,6 +6,13 @@ export enum GameState {
   MINIGAME = 'MINIGAME',
 }
 
+export enum MinigameType {
+  CANNON = 'CANNON',
+  MATH = 'MATH',
+  CODE = 'CODE',
+  DODGE = 'DODGE'
+}
+
 export enum PowerUpType {
   NONE = 'NONE',
   SHIELD = 'SHIELD',
@@ -39,6 +46,9 @@ export enum ObstacleType {
   LOW_BARRIER = 'LOW_BARRIER', // Jump over
   HIGH_BARRIER = 'HIGH_BARRIER', // Roll under
   TRAIN = 'TRAIN', // Block full lane
+  DRONE = 'DRONE', // Flying, roll under
+  SPIKES = 'SPIKES', // Floor, jump over
+  WALL = 'WALL', // Block full lane
 }
 
 export interface Entity {
@@ -47,9 +57,17 @@ export interface Entity {
   z: number; // Depth
   width: number;
   height: number;
-  type: ObstacleType | 'PIZZA' | 'SPEED_BOOST' | 'PROJECTILE';
+  type: ObstacleType | 'PIZZA' | 'SPEED_BOOST' | 'PROJECTILE' | 'EXPLOSION' | 'PARTICLE';
   subType?: string; // To distinguish projectile visuals (BLOOD, HANDCUFF, FIREBALL, etc)
   active: boolean;
+  createdAt?: number;
+  // Particle Physics
+  vx?: number;
+  vy?: number;
+  vz?: number;
+  rot?: number; 
+  vRot?: number;
+  color?: string;
 }
 
 export interface GameStats {
@@ -58,4 +76,5 @@ export interface GameStats {
   distance: number;
   ammo?: number;
   speed?: number;
+  health: number;
 }
